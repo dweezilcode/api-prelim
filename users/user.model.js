@@ -9,7 +9,11 @@ function model(sequelize) {
         title: { type: DataTypes.STRING, allowNull: false },
         firstName: { type: DataTypes.STRING, allowNull: false },
         lastName: { type: DataTypes.STRING, allowNull: false },
-        role: { type: DataTypes.STRING, allowNull: false }
+        fullName: { type: DataTypes.VIRTUAL, get() { return `${this.firstName} ${this.lastName}`; } },
+        role: { type: DataTypes.STRING, allowNull: false },
+        status: { type: DataTypes.ENUM('active', 'inactive'), allowNull: false },
+        dateCreated: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+        dateLastLoggedIn: { type: DataTypes.DATE, allowNull: true }
     };
 
     const options = {

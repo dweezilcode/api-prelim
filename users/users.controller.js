@@ -7,6 +7,7 @@ const userService = require('./user.service');
 
 router.get('/', getAll);
 router.get('/:id', getById);
+router.get('/search', search);
 router.post('/', createSchema, create);
 router.put('/:id', updateSchema, update);
 router.delete('/:id', _delete);
@@ -40,6 +41,12 @@ function update(req, res, next) {
 function _delete(req, res, next) {
     userService.delete(req.params.id)
         .then(() => res.json({ message: 'User deleted' }))
+        .catch(next);
+}
+
+function search(req, res, next) {
+    userService.search(req.query)
+        .then(users => res.json(users))
         .catch(next);
 }
 

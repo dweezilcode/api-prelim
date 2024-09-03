@@ -1,12 +1,14 @@
 const bcrypt = require('bcryptjs');
 const db = require('_helpers/db');
+const { Op } = require('sequelize');
 
 module.exports = {
     getAll,
     getById,
     create,
     update,
-    delete: _delete
+    delete: _delete,
+    search
 };
 
 async function getAll() {
@@ -51,3 +53,23 @@ async function getUser(id) {
     if (!user) throw 'User not found';
     return user;
 }
+
+async function search(params) {
+    const { fullName, email, role, status, dateCreated, dateLastLoggedIn } = params;
+
+    const where = {};
+
+    if (fullName) {
+        const [firstName, lastName] = fullName.split(' ');
+        if (firstName) where.firstName = firstName;
+        if (lastName) where.lastName = lastName;
+    }
+    if (email) where.email = email;
+    if (role) where.role = role;
+    if (status) where.status = status;
+    if (dateCreated) where.dateCreated = { [Op.gte]: new Date(dateCreated) };
+    if (dateLastLoggedIn) where.dateLastLoggedIn = { [Op.gte]: new Date(dateLastLoggedIn) };
+
+    return await db.User.findAll({ where });
+}
+

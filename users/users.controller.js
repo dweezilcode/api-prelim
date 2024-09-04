@@ -1,13 +1,13 @@
+const { searchSchema } = require('../validation/user.schemas');
 const express = require('express');
 const router = express.Router();
-const Joi = require('joi');
 const validateRequest = require('_middleware/validate-request');
 const Role = require('_helpers/role');
 const userService = require('./user.service');
 
 router.get('/', getAll);
 router.get('/:id', getById);
-router.get('/search', search);
+router.get('/search', (req, res, next) => validateRequest(req, next, searchSchema, 'query'), search);
 router.post('/', createSchema, create);
 router.put('/:id', updateSchema, update);
 router.delete('/:id', _delete);

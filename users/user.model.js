@@ -23,3 +23,5 @@ function model(sequelize) {
 
     return sequelize.define('User', attributes, options);
 }
+
+//sample jusay

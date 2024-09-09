@@ -1,13 +1,13 @@
-const { searchSchema } = require('../validation/user.schemas');
 const express = require('express');
 const router = express.Router();
+const Joi = require('joi');
 const validateRequest = require('_middleware/validate-request');
 const Role = require('_helpers/role');
 const userService = require('./user.service');
 
+router.get('/search', searchSchema, search);
 router.get('/', getAll);
 router.get('/:id', getById);
-router.get('/search', (req, res, next) => validateRequest(req, next, searchSchema, 'query'), search);
 router.post('/', createSchema, create);
 router.put('/:id', updateSchema, update);
 router.delete('/:id', _delete);
@@ -44,12 +44,6 @@ function _delete(req, res, next) {
         .catch(next);
 }
 
-function search(req, res, next) {
-    userService.search(req.query)
-        .then(users => res.json(users))
-        .catch(next);
-}
-
 function createSchema(req, res, next) {
     const schema = Joi.object({
         title: Joi.string().required(),
@@ -58,10 +52,14 @@ function createSchema(req, res, next) {
         role: Joi.string().valid(Role.Admin, Role.User).required(),
         email: Joi.string().email().required(),
         password: Joi.string().min(6).required(),
-        confirmPassword: Joi.string().valid(Joi.ref('password')).required()
+        confirmPassword: Joi.string().valid(Joi.ref('password')).required(),
+        status: Joi.string().valid('Active', 'Inactive').required(),
+        dateCreated: Joi.date().iso().required(),
+        dateLastLoggedIn: Joi.date().iso().allow('')
     });
     validateRequest(req, next, schema);
 }
+
 
 function updateSchema(req, res, next) {
     const schema = Joi.object({
@@ -73,5 +71,25 @@ function updateSchema(req, res, next) {
         password: Joi.string().min(6).empty(''),
         confirmPassword: Joi.string().valid(Joi.ref('password')).empty('')
     }).with('password', 'confirmPassword');
+    validateRequest(req, next, schema);
+}
+
+function search(req, res, next) {
+    userService.search(req.query)
+        .then(result => res.json({ total: result.count, users: result.rows }))
+        .catch(next);
+}
+
+function searchSchema(req, res, next) {
+    const schema = Joi.object({
+        fullName: Joi.string().allow(''),
+        email: Joi.string().email().allow(''),
+        role: Joi.string().valid(Role.Admin, Role.User).allow(''),
+        status: Joi.string().valid('active', 'inactive').allow(''),
+        dateCreatedStart: Joi.date().iso().allow(''),
+        dateCreatedEnd: Joi.date().iso().allow(''),
+        dateLastLoggedInStart: Joi.date().iso().allow(''),
+        dateLastLoggedInEnd: Joi.date().iso().allow('')
+    });
     validateRequest(req, next, schema);
 }

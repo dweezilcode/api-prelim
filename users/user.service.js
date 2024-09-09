@@ -1,6 +1,6 @@
-const bcrypt = require('bcryptjs');
-const db = require('_helpers/db');
 const { Op } = require('sequelize');
+const db = require('_helpers/db');
+const bcrypt = require('bcryptjs');
 
 module.exports = {
     getAll,
@@ -20,14 +20,34 @@ async function getById(id) {
 }
 
 async function create(params) {
+    
     if (await db.User.findOne({ where: { email: params.email } })) {
         throw 'Email "' + params.email + '" is already registered';
     }
 
-    const user = new db.User(params);
+    
+    if (!params.status) {
+        throw 'Status is required';
+    }
 
-    user.passwordHash = await bcrypt.hash(params.password, 10);
+    if (!params.dateCreated) {
+        params.dateCreated = new Date(); 
+    }
 
+    
+    const user = new db.User({
+        email: params.email,
+        title: params.title,
+        firstName: params.firstName,
+        lastName: params.lastName,
+        role: params.role,
+        status: params.status,
+        dateCreated: params.dateCreated, 
+        dateLastLoggedIn: params.dateLastLoggedIn, 
+        passwordHash: await bcrypt.hash(params.password, 10)
+    });
+
+    
     await user.save();
 }
 
@@ -55,21 +75,45 @@ async function getUser(id) {
 }
 
 async function search(params) {
-    const { fullName, email, role, status, dateCreated, dateLastLoggedIn } = params;
-
     const where = {};
 
-    if (fullName) {
-        const [firstName, lastName] = fullName.split(' ');
-        if (firstName) where.firstName = firstName;
-        if (lastName) where.lastName = lastName;
+    if (params.fullName) {
+        const fullName = params.fullName.toLowerCase();
+        where[Op.and] = [
+            db.sequelize.where(
+                db.sequelize.fn('concat', db.sequelize.col('title'), ' ', db.sequelize.col('firstName'), ' ', db.sequelize.col('lastName')),
+                {
+                    [Op.like]: `%${fullName}%`
+                }
+            )
+        ];
     }
-    if (email) where.email = email;
-    if (role) where.role = role;
-    if (status) where.status = status;
-    if (dateCreated) where.dateCreated = { [Op.gte]: new Date(dateCreated) };
-    if (dateLastLoggedIn) where.dateLastLoggedIn = { [Op.gte]: new Date(dateLastLoggedIn) };
+    
+    if (params.email) {
+        where.email = {
+            [Op.like]: `%${params.email}%`
+        };
+    }
 
-    return await db.User.findAll({ where });
+    if (params.role) {
+        where.role = params.role;
+    }
+
+    if (params.status) {
+        where.status = params.status;
+    }
+
+    if (params.dateCreatedStart && params.dateCreatedEnd) {
+        where.dateCreated = {
+            [Op.between]: [params.dateCreatedStart, params.dateCreatedEnd]
+        };
+    }
+
+    if (params.dateLastLoggedInStart && params.dateLastLoggedInEnd) {
+        where.dateLastLoggedIn = {
+            [Op.between]: [params.dateLastLoggedInStart, params.dateLastLoggedInEnd]
+        };
+    }
+
+    return await db.User.findAndCountAll({ where });
 }
-

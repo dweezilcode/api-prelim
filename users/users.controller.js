@@ -1,28 +1,39 @@
-const express = require('express');
-const router = express.Router();
 const Joi = require('joi');
 const validateRequest = require('_middleware/validate-request'); // Ensure this path is correct
 const Role = require('_helpers/role');
 const userService = require('../services/user.service'); // Ensure this path is correct
 
+// Retrieve user preferences
+async function getPreferences(req, res, next) {
+    try {
+        const preferences = await userService.getPreferences(req.params.userId); // Correct parameter
+        res.json(preferences);
+    } catch (error) {
+        next(error); // Pass error to the error-handling middleware
+    }
+}
+
+// Update user preferences
+async function updatePreferences(req, res, next) {
+    try {
+        await userService.updatePreferences(req.params.userId, req.body); // Correct parameter
+        res.json({ message: 'Preferences updated' });
+    } catch (error) {
+        next(error); // Pass error to the error-handling middleware
+    }
+}
+
+// Validation schema for updating preferences
+function updatePreferencesSchema(req, res, next) {
+    const schema = Joi.object({
+        themeColor: Joi.string().valid('light', 'dark', 'blue').optional(), // Added 'blue'
+        emailNotifications: Joi.boolean().optional(),
+        language: Joi.string().valid('en', 'es', 'fr').optional()
+    });
+    validateRequest(req, next, schema);
+}
+
 // Routes for user CRUD operations
-router.get('/', getAll);
-router.get('/:id', getById);
-router.post('/', createSchema, create);
-router.put('/:id', updateSchema, update);
-router.delete('/:id', _delete);
-
-
-
-// Routes for user preferences
-router.get('/:id/preferences', getPreferences);
-router.put('/:id/preferences', updatePreferencesSchema, updatePreferences);
-
-module.exports = router;
-
-
-
-//function for CRUID
 function getAll(req, res, next) {
     userService.getAll()
         .then(users => res.json(users))
@@ -31,7 +42,7 @@ function getAll(req, res, next) {
 
 function getById(req, res, next) {
     userService.getById(req.params.id)
-        .then(users => res.json(users))
+        .then(user => res.json(user))
         .catch(next);
 }
 
@@ -79,40 +90,15 @@ function updateSchema(req, res, next) {
     validateRequest(req, next, schema);
 }
 
-
-
-
-
-
-
-
-
-// Retrieve user preferences
-async function getPreferences(req, res, next) {
-    try {
-        const preferences = await userService.getPreferences(req.params.id);
-        res.json(preferences);
-    } catch (error) {
-        next(error); // Pass error to the error-handling middleware
-    }
-}
-
-// Update user preferences
-async function updatePreferences(req, res, next) {
-    try {
-        await userService.updatePreferences(req.params.id, req.body);
-        res.json({ message: 'Preferences updated' });
-    } catch (error) {
-        next(error); // Pass error to the error-handling middleware
-    }
-}
-
-// Validation schema for updating preferences
-function updatePreferencesSchema(req, res, next) {
-    const schema = Joi.object({
-        themeColor: Joi.string().valid('light', 'dark','blue').optional(),
-        emailNotifications: Joi.boolean().optional(),
-        language: Joi.string().valid('en', 'es', 'fr').optional()
-    });
-    validateRequest(req, next, schema);
-}
+module.exports = {
+    getAll,
+    getById,
+    create,
+    update,
+    _delete,
+    createSchema,
+    updateSchema,
+    getPreferences,
+    updatePreferences,
+    updatePreferencesSchema
+};

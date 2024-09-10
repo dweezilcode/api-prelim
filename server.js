@@ -3,6 +3,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const errorHandler = require('_middleware/error-handler'); // Ensure this path is correct
+const userRoutes = require('./users/user.routes'); // Ensure this path is correct
 
 // Middleware
 app.use(express.json());
@@ -10,7 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 // Routes
-app.use('/users', require('./users/user.routes')); // Adjust the path if necessary
+app.use('/api/users', userRoutes); // Adjust the path if necessary
 
 // Error Handling Middleware
 app.use(errorHandler);

@@ -1,16 +1,20 @@
-require('rootpath')();
+require('rootpath')(); // Ensure the root path is set up correctly
 const express = require('express');
 const app = express();
 const cors = require('cors');
-const errorHandler = require('_middleware/error-handler');
+const errorHandler = require('_middleware/error-handler'); // Ensure this path is correct
 
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-app.use('/users', require('./users/users.controller'));
+// Routes
+app.use('/users', require('./users/user.routes')); // Adjust the path if necessary
 
+// Error Handling Middleware
 app.use(errorHandler);
 
+// Server Initialization
 const port = process.env.NODE_ENV === 'production' ? (process.env.PORT || 80) : 4000;
-app.listen(port, () => console.log('Server listening on port ' + port));
+app.listen(port, () => console.log(`Server listening on port ${port}`));

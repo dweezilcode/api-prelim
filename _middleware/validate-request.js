@@ -15,3 +15,13 @@ function validateRequest(req, next, schema) {
     }
 
 }
+
+function validateRequest(req, next, schema) {
+    const { error } = schema.validate(req.body);
+    if (error) {
+        return next(new Error(error.details[0].message));
+    }
+    next();
+}
+
+module.exports = validateRequest;

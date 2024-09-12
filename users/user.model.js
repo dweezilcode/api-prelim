@@ -1,25 +1,53 @@
 const { DataTypes } = require('sequelize');
 
-module.exports = model;
-
-function model(sequelize) {
-    const attributes = {
-        email: { type: DataTypes.STRING, allowNull: false },
-        passwordHash: { type: DataTypes.STRING, allowNull: false },
-        title: { type: DataTypes.STRING, allowNull: false },
-        firstName: { type: DataTypes.STRING, allowNull: false },
-        lastName: { type: DataTypes.STRING, allowNull: false },
-        role: { type: DataTypes.STRING, allowNull: false }
-    };
-
-    const options = {
+module.exports = (sequelize) => {
+    const User = sequelize.define('User', {
+        email: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,  // Ensures that each email is unique
+            validate: {
+                isEmail: true  // Validates that the field contains a valid email
+            }
+        },
+        passwordHash: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        title: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        firstName: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        lastName: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        role: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            validate: {
+                isIn: [['Admin', 'User']]  // Ensures role is either 'Admin' or 'User'
+            }
+        }
+    }, {
         defaultScope: {
-            attributes: { exclude: ['passwordHash'] }
+            attributes: { exclude: ['passwordHash'] }  // Exclude passwordHash by default
         },
         scopes: {
-            withHash: { attributes: {}, }
-        }
-    };
+            withHash: { attributes: {} }  // Include all attributes, including passwordHash
+        },
+        timestamps: true,  // Adds createdAt and updatedAt fields
+        indexes: [
+            {
+                unique: true,
+                fields: ['email']  // Index on email field
+            }
+        ]
+    });
 
-    return sequelize.define('User', attributes, options);
-}
+    return User;
+};

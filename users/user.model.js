@@ -30,21 +30,25 @@ module.exports = (sequelize) => {
             type: DataTypes.STRING,
             allowNull: false,
             validate: {
-                isIn: [['Admin', 'User']]  // Ensures role is either 'Admin' or 'User'
+                isIn: [['Admin', 'User']]  // Validates that the role is either 'Admin' or 'User'
             }
+        },
+        permissions: {
+            type: DataTypes.JSON,  // Use JSON data type for MySQL
+            allowNull: true  // Permissions are optional and can be empty
         }
     }, {
         defaultScope: {
-            attributes: { exclude: ['passwordHash'] }  // Exclude passwordHash by default
+            attributes: { exclude: ['passwordHash'] }  // Excludes passwordHash by default
         },
         scopes: {
-            withHash: { attributes: {} }  // Include all attributes, including passwordHash
+            withHash: { attributes: {} }  // Includes all attributes, including passwordHash
         },
         timestamps: true,  // Adds createdAt and updatedAt fields
         indexes: [
             {
                 unique: true,
-                fields: ['email']  // Index on email field
+                fields: ['email']  // Index on email field for uniqueness
             }
         ]
     });

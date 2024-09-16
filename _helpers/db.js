@@ -7,6 +7,7 @@ const path = require('path');
 module.exports = db = {}; // Export db object
 
 async function initialize() {
+    let sequelize;
     try {
         // Configuration from environment variables
         const config = {
@@ -37,13 +38,16 @@ async function initialize() {
         await connection.end();
 
         // Create a new connection specifying the database
-        const sequelize = new Sequelize(config.database, config.user, config.password, { 
+        sequelize = new Sequelize(config.database, config.user, config.password, { 
             dialect: 'mysql',
             logging: false // Disable logging if not needed
         });
 
         // Define and synchronize models
         db.User = require(path.resolve(__dirname, '../users/user.model'))(sequelize);
+        db.UserActivity = require(path.resolve(__dirname, '../users/userActivity.model'))(sequelize);
+
+        // Synchronize models
         await sequelize.sync({ alter: true });
 
         console.log('Database initialized and synchronized successfully.');

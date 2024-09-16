@@ -16,6 +16,8 @@ router.get('/search', search);
 router.put('/:id/role', updateRoleSchema, updateRole);
 router.post('/:id/permissions', modifyPermissionsSchema, grantPermissions);
 router.delete('/:id/permissions', modifyPermissionsSchema, revokePermissions);
+router.post('/:userId/activity', logActivitySchema, logActivity);
+router.get('/:userId/activity', retrieveActivitySchema, retrieveActivities);
 
 module.exports = router;
 
@@ -161,3 +163,57 @@ function modifyPermissionsSchema(req, res, next) {
     });
     validateRequest(req, res, next, schema);
 }
+async function logActivity(req, res, next) {
+    try {
+        const { userId } = req.params;
+        const { actionType, ipAddress, browserInfo } = req.body;
+
+        // Call the service to log activity
+        await userService.logUserActivity(userId, actionType, ipAddress, browserInfo);
+        res.json({ success: true, message: 'Activity logged successfully' });
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function retrieveActivities(req, res, next) {
+    try {
+        const { userId } = req.params;
+        const filter = {};
+
+        const { actionType, startTimestamp, endTimestamp } = req.query;
+        if (actionType) filter.actionType = actionType;
+        if (startTimestamp || endTimestamp) {
+            filter.timestamp = {};
+            if (startTimestamp) filter.timestamp[Op.gte] = new Date(startTimestamp);
+            if (endTimestamp) filter.timestamp[Op.lte] = new Date(endTimestamp);
+        }
+
+        // Call the service to get activities
+        const activities = await userService.getUserActivities(userId, filter);
+        res.json({ success: true, data: activities });
+    } catch (error) {
+        next(error);
+    }
+}
+
+// Validation schemas
+function logActivitySchema(req, res, next) {
+    const schema = Joi.object({
+        actionType: Joi.string().valid('login', 'logout', 'profile update', 'password change').required(),
+        ipAddress: Joi.string().ip().required(),
+        browserInfo: Joi.string().required()
+    });
+    validateRequest(req, res, next, schema);
+}
+
+function retrieveActivitySchema(req, res, next) {
+    const schema = Joi.object({
+        actionType: Joi.string().valid('login', 'logout', 'profile update', 'password change'),
+        startTimestamp: Joi.date(),
+        endTimestamp: Joi.date()
+    });
+    validateRequest(req, res, next, schema, 'query');
+}
+
+module.exports = router;

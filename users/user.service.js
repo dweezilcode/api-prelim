@@ -12,23 +12,21 @@ module.exports = {
     search,
     updateRole,
     grantPermissions,
-    revokePermissions
+    revokePermissions,
+    logUserActivity,   // Added
+    getUserActivity    // Added
 };
 
 // Fetch all users
 async function getAll() {
     try {
-        // Attempt to fetch all users that are not marked as deleted
         return await db.User.findAll({
             where: {
-                isDeleted: false // Filter out soft-deleted users
+                isDeleted: false
             }
         });
     } catch (error) {
-        // Log the error for debugging
         console.error('Error fetching users:', error.message || error);
-
-        // Throw a more detailed error message
         throw new Error('Error fetching users. Please check the server logs for details.');
     }
 }
@@ -38,15 +36,15 @@ async function getById(id) {
     try {
         const user = await db.User.findByPk(id, {
             where: {
-                isDeleted: false // Ensure you don't retrieve soft-deleted users
+                isDeleted: false
             }
         });
 
         if (!user) throw new UserError('User not found');
         return user;
     } catch (error) {
-        console.error('Error in getById:', error);  // Log the error
-        throw error;  // Rethrow the error to be caught by the controller
+        console.error('Error in getById:', error);
+        throw error;
     }
 }
 
@@ -106,7 +104,6 @@ async function search(criteria, pagination) {
     if (criteria.email) searchOptions.where.email = { [Op.like]: `%${criteria.email}%` };
     if (criteria.name) searchOptions.where.firstName = { [Op.like]: `%${criteria.name}%` };
 
-    // Handle pagination if provided
     if (pagination.page && pagination.limit) {
         searchOptions.limit = pagination.limit;
         searchOptions.offset = (pagination.page - 1) * pagination.limit;
@@ -157,5 +154,50 @@ async function revokePermissions(id, permissions) {
         await user.save();
     } catch (error) {
         throw new Error('Error revoking permissions');
+    }
+}
+
+// Log user activity
+async function logUserActivity(userId, actionType, additionalData = {}) {
+    try {
+        await db.UserActivity.create({
+            userId,
+            actionType,
+            timestamp: new Date(),
+            ipAddress: additionalData.ipAddress || null,
+            browserInfo: additionalData.browserInfo || null
+        });
+    } catch (error) {
+        console.error('Error logging user activity:', error);
+        throw new Error('Error logging user activity');
+    }
+}
+
+// Retrieve user activity
+async function getUserActivity(userId, filters = {}) {
+    try {
+        const { actionType, startDate, endDate } = filters;
+
+        const where = {
+            userId
+        };
+
+        if (actionType) {
+            where.actionType = actionType;
+        }
+
+        if (startDate || endDate) {
+            where.timestamp = {};
+            if (startDate) where.timestamp[Op.gte] = new Date(startDate);
+            if (endDate) where.timestamp[Op.lte] = new Date(endDate);
+        }
+
+        return await db.UserActivity.findAll({
+            where,
+            order: [['timestamp', 'DESC']]
+        });
+    } catch (error) {
+        console.error('Error retrieving user activity:', error);
+        throw new Error('Error retrieving user activity');
     }
 }

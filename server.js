@@ -2,13 +2,15 @@ require('rootpath')();
 const express = require('express');
 const app = express();
 const cors = require('cors');
-const errorHandler = require('_middleware/error-handler');
+const errorHandler = require('./_middleware/error-handler'); // Adjust the path
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-app.use('/users', require('./users/users.controller'));
+// Register routes
+app.use('/api/users', require('./users/users.controller'));
+app.use('/api/users', require('./users/activity.controller')); // Ensure this is correctly registered
 
 app.use(errorHandler);
 

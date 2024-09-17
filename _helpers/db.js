@@ -21,7 +21,7 @@ async function initialize() {
         // Add models to the db object
         db.sequelize = sequelize;
         db.User = require('../users/user.model')(sequelize);
-        db.Activity = require('../users/activity.model')(sequelize); // Added from the second project
+        db.Activity = require('../users/activity.model')(sequelize); // Added model from sub project
 
         // Sync models to the database
         await sequelize.sync({ alter: true });

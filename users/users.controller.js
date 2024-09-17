@@ -1,19 +1,41 @@
 const express = require('express');
-const router = express.Router();
 const Joi = require('joi');
-const validateRequest = require('_middleware/validate-request');
+const validateRequest = require('_middleware/validate-request'); // Ensure this path is correct
 const Role = require('_helpers/role');
-const userService = require('./user.service');
+const userService = require('./user.service'); // Corrected path
 
-// Routes
-router.get('/search', searchSchema, search);
-router.get('/', getAll);
-router.get('/:id', getById);
-router.post('/', createSchema, create);
-router.put('/:id', updateSchema, update);
-router.delete('/:id', _delete);
+// Create a new Express router
+const router = express.Router();
 
-module.exports = router;
+// Retrieve user preferences
+async function getPreferences(req, res, next) {
+    try {
+        const preferences = await userService.getPreferences(req.params.userId); // Correct parameter
+        res.json(preferences);
+    } catch (error) {
+        next(error); // Pass error to the error-handling middleware
+    }
+}
+
+// Update user preferences
+async function updatePreferences(req, res, next) {
+    try {
+        await userService.updatePreferences(req.params.userId, req.body); // Correct parameter
+        res.json({ message: 'Preferences updated' });
+    } catch (error) {
+        next(error); // Pass error to the error-handling middleware
+    }
+}
+
+// Validation schema for updating preferences
+function updatePreferencesSchema(req, res, next) {
+    const schema = Joi.object({
+        themeColor: Joi.string().valid('light', 'dark', 'blue').optional(), // Added 'blue'
+        emailNotifications: Joi.boolean().optional(),
+        language: Joi.string().valid('en', 'es', 'fr').optional()
+    });
+    validateRequest(req, next, schema);
+}
 
 // Route handlers
 function getAll(req, res, next) {
@@ -95,3 +117,17 @@ function searchSchema(req, res, next) {
     });
     validateRequest(req, next, schema);
 }
+
+// Define routes
+router.get('/', getAll);
+router.get('/:id', getById);
+router.post('/', createSchema, create);
+router.put('/:id', updateSchema, update);
+router.delete('/:id', _delete);
+
+router.get('/search', searchSchema, search);
+
+router.get('/:userId/preferences', getPreferences);
+router.put('/:userId/preferences', updatePreferencesSchema, updatePreferences);
+
+module.exports = router;

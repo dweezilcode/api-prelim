@@ -20,21 +20,18 @@ async function getById(id) {
 }
 
 async function create(params) {
-    
     if (await db.User.findOne({ where: { email: params.email } })) {
         throw 'Email "' + params.email + '" is already registered';
     }
 
-    
     if (!params.status) {
         throw 'Status is required';
     }
 
     if (!params.dateCreated) {
-        params.dateCreated = new Date(); 
+        params.dateCreated = new Date();
     }
 
-    
     const user = new db.User({
         email: params.email,
         title: params.title,
@@ -42,12 +39,11 @@ async function create(params) {
         lastName: params.lastName,
         role: params.role,
         status: params.status,
-        dateCreated: params.dateCreated, 
-        dateLastLoggedIn: params.dateLastLoggedIn, 
+        dateCreated: params.dateCreated,
+        dateLastLoggedIn: params.dateLastLoggedIn,
         passwordHash: await bcrypt.hash(params.password, 10)
     });
 
-    
     await user.save();
 }
 

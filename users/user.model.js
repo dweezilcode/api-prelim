@@ -1,8 +1,8 @@
 const { DataTypes } = require('sequelize');
 
-module.exports = model;
+module.exports = defineUserModel;
 
-function model(sequelize) {
+function defineUserModel(sequelize) {
     const attributes = {
         email: { type: DataTypes.STRING, allowNull: false, unique: true },
         passwordHash: { type: DataTypes.STRING, allowNull: false },
@@ -10,9 +10,12 @@ function model(sequelize) {
         firstName: { type: DataTypes.STRING, allowNull: false },
         lastName: { type: DataTypes.STRING, allowNull: false },
         role: { type: DataTypes.STRING, allowNull: false },
-        status: { type: DataTypes.STRING, allowNull: false },
-        dateCreated: { type: DataTypes.DATE, allowNull: false },
-        dateLastLoggedIn: { type: DataTypes.DATE, allowNull: true }
+        status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'active' },
+        dateCreated: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+        dateLastLoggedIn: { type: DataTypes.DATE, allowNull: true },
+        themeColor: { type: DataTypes.STRING, allowNull: true, defaultValue: 'light' },
+        emailNotifications: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: true },
+        language: { type: DataTypes.STRING, allowNull: true, defaultValue: 'en' }
     };
 
     const options = {
@@ -48,4 +51,3 @@ function model(sequelize) {
 
     return sequelize.define('User', attributes, options);
 }
-//s

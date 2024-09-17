@@ -1,6 +1,6 @@
+const bcrypt = require('bcryptjs');
 const { Op } = require('sequelize');
 const db = require('_helpers/db');
-const bcrypt = require('bcryptjs');
 
 module.exports = {
     getAll,
@@ -8,17 +8,22 @@ module.exports = {
     create,
     update,
     delete: _delete,
-    search
+    search,
+    getPreferences,
+    updatePreferences
 };
 
+// Retrieve all users
 async function getAll() {
     return await db.User.findAll();
 }
 
+// Retrieve a user by ID
 async function getById(id) {
     return await getUser(id);
 }
 
+// Create a new user
 async function create(params) {
     if (await db.User.findOne({ where: { email: params.email } })) {
         throw 'Email "' + params.email + '" is already registered';
@@ -32,21 +37,16 @@ async function create(params) {
         params.dateCreated = new Date();
     }
 
-    const user = new db.User({
-        email: params.email,
-        title: params.title,
-        firstName: params.firstName,
-        lastName: params.lastName,
-        role: params.role,
-        status: params.status,
-        dateCreated: params.dateCreated,
-        dateLastLoggedIn: params.dateLastLoggedIn,
-        passwordHash: await bcrypt.hash(params.password, 10)
-    });
+    if (params.password) {
+        params.passwordHash = await bcrypt.hash(params.password, 10);
+        delete params.password; // Remove plain password from params
+    }
 
-    await user.save();
+    const user = await db.User.create(params);
+    return user;
 }
 
+// Update user information
 async function update(id, params) {
     const user = await getUser(id);
 
@@ -56,20 +56,30 @@ async function update(id, params) {
     }
 
     Object.assign(user, params);
+
+    if (params.password) {
+        user.passwordHash = await bcrypt.hash(params.password, 10);
+    }
+
     await user.save();
+    return user;
 }
 
+// Delete a user by ID
 async function _delete(id) {
     const user = await getUser(id);
     await user.destroy();
+    return { message: 'User deleted successfully' };
 }
 
+// Retrieve a user by ID (helper function)
 async function getUser(id) {
     const user = await db.User.findByPk(id);
     if (!user) throw 'User not found';
     return user;
 }
 
+// Search users with filtering criteria
 async function search(params) {
     const where = {};
 
@@ -112,4 +122,34 @@ async function search(params) {
     }
 
     return await db.User.findAndCountAll({ where });
+}
+
+// Retrieve user preferences
+async function getPreferences(id) {
+    try {
+        const user = await getById(id);
+        return {
+            themeColor: user.themeColor,
+            emailNotifications: user.emailNotifications,
+            language: user.language
+        };
+    } catch (error) {
+        throw new Error(`Error retrieving user preferences: ${error.message}`);
+    }
+}
+
+// Update user preferences
+async function updatePreferences(id, params) {
+    try {
+        const user = await getById(id);
+
+        if (params.themeColor !== undefined) user.themeColor = params.themeColor;
+        if (params.emailNotifications !== undefined) user.emailNotifications = params.emailNotifications;
+        if (params.language !== undefined) user.language = params.language;
+
+        await user.save();
+        return { message: 'Preferences updated successfully' };
+    } catch (error) {
+        throw new Error(`Error updating user preferences: ${error.message}`);
+    }
 }

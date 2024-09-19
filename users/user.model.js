@@ -1,57 +1,53 @@
 const { DataTypes } = require('sequelize');
 
-module.exports = (sequelize) => {
-    const User = sequelize.define('User', {
-        email: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,  // Ensures that each email is unique
-            validate: {
-                isEmail: true  // Validates that the field contains a valid email
-            }
-        },
-        passwordHash: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        title: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        firstName: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        lastName: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        role: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            validate: {
-                isIn: [['Admin', 'User']]  // Validates that the role is either 'Admin' or 'User'
-            }
-        },
-        permissions: {
-            type: DataTypes.JSON,  // Use JSON data type for MySQL
-            allowNull: true  // Permissions are optional and can be empty
-        }
-    }, {
+module.exports = defineUserModel;
+
+function defineUserModel(sequelize) {
+    const attributes = {
+        email: { type: DataTypes.STRING, allowNull: false, unique: true },
+        passwordHash: { type: DataTypes.STRING, allowNull: false },
+        title: { type: DataTypes.STRING, allowNull: false },
+        firstName: { type: DataTypes.STRING, allowNull: false },
+        lastName: { type: DataTypes.STRING, allowNull: false },
+        role: { type: DataTypes.STRING, allowNull: false },
+        status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'active' },
+        dateCreated: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+        dateLastLoggedIn: { type: DataTypes.DATE, allowNull: true },
+        themeColor: { type: DataTypes.STRING, allowNull: true, defaultValue: 'light' },
+        emailNotifications: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: true },
+        language: { type: DataTypes.STRING, allowNull: true, defaultValue: 'en' }
+    };
+
+    const options = {
         defaultScope: {
-            attributes: { exclude: ['passwordHash'] }  // Excludes passwordHash by default
+            attributes: { exclude: ['passwordHash'] }
         },
         scopes: {
-            withHash: { attributes: {} }  // Includes all attributes, including passwordHash
+            withHash: { attributes: {} }
         },
-        timestamps: true,  // Adds createdAt and updatedAt fields
         indexes: [
             {
-                unique: true,
-                fields: ['email']  // Index on email field for uniqueness
+                unique: false,
+                fields: ['email']
+            },
+            {
+                unique: false,
+                fields: ['role']
+            },
+            {
+                unique: false,
+                fields: ['status']
+            },
+            {
+                unique: false,
+                fields: ['dateCreated']
+            },
+            {
+                unique: false,
+                fields: ['dateLastLoggedIn']
             }
         ]
-    });
+    };
 
-    return User;
-};
+    return sequelize.define('User', attributes, options);
+}

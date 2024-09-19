@@ -1,59 +1,68 @@
-const Joi = require('joi');
+const jwt = require('jsonwebtoken');
 
-module.exports = validateRequest;
+module.exports = {
+    validateRequest,
+    authenticate,
+    validateRole
+};
 
-function validateRequest(req, res, next, schema, type = 'body') {
+// Function to validate request body against schema (using Joi)
+function validateRequest(req, res, next, schema) {
     const options = {
-        abortEarly: false,  // Collect all errors
-        allowUnknown: true,  // Allow properties not defined in the schema
-        stripUnknown: true  // Remove properties not defined in the schema
+        abortEarly: false, // Include all validation errors
+        allowUnknown: true, // Allow unknown fields
+        stripUnknown: true  // Remove unknown fields from the object
     };
-
-    let data;
-    switch (type) {
-        case 'body':
-            data = req.body;
-            break;
-        case 'query':
-            data = req.query;
-            break;
-        case 'params':
-            data = req.params;
-            break;
-        // Optionally handle other types if needed
-        default:
-            return res.status(400).json({ error: 'Invalid validation type' });
-    }
-
-    // Validate the data against the schema
-    const { error, value } = schema.validate(data, options);
-
+    
+    const { error, value } = schema.validate(req.body, options);
     if (error) {
-        // Create a structured error response
-        const errorDetails = error.details.map(detail => ({
-            message: detail.message,
-            path: detail.path,
-            type: detail.type
-        }));
-
-        // Respond with a JSON error object
         return res.status(400).json({
-            error: 'Validation error',
-            details: errorDetails
+            success: false,
+            message: `Validation error: ${error.details.map(x => x.message).join(', ')}`
         });
-    } else {
-        // Assign the validated value to the appropriate request property
-        switch (type) {
-            case 'body':
-                req.body = value;
-                break;
-            case 'query':
-                req.query = value;
-                break;
-            case 'params':
-                req.params = value;
-                break;
-        }
-        next();
     }
+    
+    req.body = value; // Set the validated value to req.body
+    next(); // Proceed to the next middleware
+}
+
+// Middleware to authenticate user via JWT
+function authenticate(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    console.log('Authorization Header:', authHeader); // Add this log for debugging
+
+    if (!authHeader) {
+        return res.status(401).json({ success: false, message: 'Access denied. No token provided.' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+        return res.status(401).json({ success: false, message: 'Access denied. Invalid token.' });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ success: false, message: 'Access denied. Invalid token.' });
+        }
+
+        req.user = decoded;
+        next();
+    });
+}
+
+// Middleware to validate user roles
+function validateRole(roles) {
+    return (req, res, next) => {
+        const userRole = req.user?.role;
+
+        if (!userRole) {
+            return res.status(403).json({ success: false, message: 'Access denied. No role found for user.' });
+        }
+
+        if (!roles.includes(userRole)) {
+            return res.status(403).json({ success: false, message: `Access denied. Unauthorized role: ${userRole}` });
+        }
+
+        next(); // Proceed to the next middleware
+    };
 }

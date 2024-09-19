@@ -1,55 +1,35 @@
-require('rootpath')();  // Ensure this is used correctly, typically to set the root path for module imports
-require('dotenv').config();  // Load environment variables
+require('rootpath')(); // Ensure the root path is set correctly
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
-const errorHandler = require('_middleware/error-handler');
-const userRoutes = require('./users/users.controller');
+const dotenv = require('dotenv'); // Import dotenv to load environment variables
+dotenv.config(); // Load environment variables from the .env file
 
-// Validate environment variables
-const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
-if (!DB_HOST || !DB_PORT || !DB_USER || !DB_PASSWORD || !DB_NAME) {
-    throw new Error('Missing environment variables');
-}
-
-// Initialize express
 const app = express();
+const errorHandler = require('./_middleware/error-handler'); // Adjust the path as needed
+const usersController = require('./users/users.controller'); // Users controller
+const activityController = require('./activity/activity.controller'); // Activity controller
+const productController = require('./products/product.controller'); // Product controller
 
 // Middleware
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Middleware for logging user activities
-app.use(async (req, res, next) => {
-    if (req.userId) { // Ensure req.userId is set (e.g., by authentication middleware)
-        const logEntry = {
-            actionType: req.method, // HTTP method as action type (customize if needed)
-            timestamp: new Date().toISOString(),
-            ipAddress: req.ip,
-            browserInfo: req.headers['user-agent']
-        };
-        try {
-            await userService.logUserActivity(req.userId, logEntry.actionType, logEntry.ipAddress, logEntry.browserInfo); // Log the activity
-        } catch (error) {
-            console.error('Failed to log user activity:', error);
-        }
-    }
-    next();
-});
+app.use(express.json()); // Parse JSON request bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded request bodies
+app.use(cors()); // Enable Cross-Origin Resource Sharing (CORS)
 
 // Routes
-app.use('/api/users', userRoutes);
-app.use('/users', userRoutes);
+app.use('/api/users', usersController); // User routes
+app.use('/api/activity', activityController); // Activity routes
+app.use('/api/products', productController); // Product routes
 
-// Error handling middleware (should be the last middleware)
-app.use(errorHandler);  // Custom error handling middleware
+// Global Error Handler Middleware
+app.use(errorHandler); // Handle errors globally
 
-// Start the server
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log('Current working directory:', process.cwd());
-    console.log('Error handler path:', require.resolve('_middleware/error-handler'));
-});
+// Server Initialization
+const jwtSecret = process.env.JWT_SECRET;
+const dbHost = process.env.DB_HOST;
+const port = process.env.PORT || 4000;
+
+console.log(`JWT Secret: ${jwtSecret}`);
+console.log(`Database Host: ${dbHost}`);
+console.log(`Server running on port ${port}`);
+
+app.listen(port, () => console.log(`Server listening on port ${port}`));

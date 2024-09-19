@@ -1,126 +1,78 @@
 const express = require('express');
-const router = express.Router();
 const Joi = require('joi');
-const validateRequest = require('_middleware/validate-request');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const validateRequest = require('_middleware/validate-request'); // Ensure this path is correct
 const Role = require('_helpers/role');
-const { Op } = require('sequelize'); // Import Op for search queries
-const userService = require('./user.service');
+const { User } = require('users/user.model'); // Import the User model from your models directory
 
-// Define routes
-router.get('/', getAll);
-router.get('/:id', getById);
-router.post('/', createSchema, create);
-router.put('/:id', updateSchema, update);
-router.delete('/:id', deleteUser);
-router.get('/search', search);
-router.put('/:id/role', updateRoleSchema, updateRole);
-router.post('/:id/permissions', modifyPermissionsSchema, grantPermissions);
-router.delete('/:id/permissions', modifyPermissionsSchema, revokePermissions);
-router.post('/:userId/activity', logActivitySchema, logActivity);
-router.get('/:userId/activity', retrieveActivitySchema, retrieveActivities);
+const router = express.Router();
 
-module.exports = router;
-
-// Route handlers using async/await
-
-async function getAll(req, res, next) {
+// Retrieve user preferences
+async function getPreferences(req, res, next) {
     try {
-        const users = await userService.getAll();
-        res.json({ success: true, data: users });
+        const preferences = await userService.getPreferences(req.params.userId); 
+        res.json(preferences);
     } catch (error) {
-        console.error('Error in getAll controller:', error); // Log the detailed error
-        next(error); // Pass the error to the error handler
+        next(error); 
     }
 }
 
-async function getById(req, res, next) {
+// Update user preferences
+async function updatePreferences(req, res, next) {
     try {
-        const user = await userService.getById(req.params.id);
-        res.json({ success: true, data: user });
+        await userService.updatePreferences(req.params.userId, req.body); 
+        res.json({ message: 'Preferences updated' });
     } catch (error) {
-        next(error); // Pass the error to the error handler
+        next(error); 
     }
 }
 
-async function create(req, res, next) {
-    try {
-        await userService.create(req.body);
-        res.status(201).json({ success: true, message: 'User created successfully' });
-    } catch (error) {
-        next(error);
-    }
+// Validation schema for updating preferences
+function updatePreferencesSchema(req, res, next) {
+    const schema = Joi.object({
+        themeColor: Joi.string().valid('light', 'dark', 'blue').optional(),
+        emailNotifications: Joi.boolean().optional(),
+        language: Joi.string().valid('en', 'es', 'fr').optional()
+    });
+    validateRequest(req, next, schema);
 }
 
-async function update(req, res, next) {
-    try {
-        await userService.update(req.params.id, req.body);
-        res.json({ success: true, message: 'User updated successfully' });
-    } catch (error) {
-        next(error);
-    }
+// Route handlers
+function getAll(req, res, next) {
+    userService.getAll()
+        .then(users => res.json(users))
+        .catch(next);
 }
 
-async function deleteUser(req, res, next) {
-    try {
-        await userService.deleteUser(req.params.id);
-        res.json({ success: true, message: 'User deleted successfully' });
-    } catch (error) {
-        next(error);
-    }
+function getById(req, res, next) {
+    userService.getById(req.params.id)
+        .then(user => res.json(user))
+        .catch(next);
 }
 
-async function search(req, res, next) {
-    try {
-        // Validate the query parameters
-        const { error, value } = searchSchema.validate(req.query);
-        if (error) {
-            return res.status(400).json({
-                error: 'Validation error',
-                details: error.details
-            });
-        }
-
-        const { email, name, page, limit } = value;
-
-        // Build search criteria
-        const searchCriteria = {};
-        if (email) searchCriteria.email = { [Op.like]: `%${email}%` };
-        if (name) searchCriteria.firstName = { [Op.like]: `%${name}%` };
-
-        // Call the userService to fetch users with pagination
-        const users = await userService.search(searchCriteria, { page, limit });
-
-        res.json({ success: true, data: users });
-    } catch (error) {
-        next(error);
-    }
+function create(req, res, next) {
+    userService.create(req.body)
+        .then(() => res.json({ message: 'User created' }))
+        .catch(next);
 }
 
-async function updateRole(req, res, next) {
-    try {
-        await userService.updateRole(req.params.id, req.body.role);
-        res.json({ success: true, message: 'User role updated successfully' });
-    } catch (error) {
-        next(error);
-    }
+function update(req, res, next) {
+    userService.update(req.params.id, req.body)
+        .then(() => res.json({ message: 'User updated' }))
+        .catch(next);
 }
 
-async function grantPermissions(req, res, next) {
-    try {
-        await userService.grantPermissions(req.params.id, req.body.permissions);
-        res.json({ success: true, message: 'Permissions granted successfully' });
-    } catch (error) {
-        next(error);
-    }
+function _delete(req, res, next) {
+    userService.delete(req.params.id)
+        .then(() => res.json({ message: 'User deleted' }))
+        .catch(next);
 }
 
-async function revokePermissions(req, res, next) {
-    try {
-        await userService.revokePermissions(req.params.id, req.body.permissions);
-        res.json({ success: true, message: 'Permissions revoked successfully' });
-    } catch (error) {
-        next(error);
-    }
+function search(req, res, next) {
+    userService.search(req.query)
+        .then(result => res.json({ total: result.count, users: result.rows }))
+        .catch(next);
 }
 
 // Validation schemas
@@ -132,88 +84,76 @@ function createSchema(req, res, next) {
         role: Joi.string().valid(Role.Admin, Role.User).required(),
         email: Joi.string().email().required(),
         password: Joi.string().min(6).required(),
-        confirmPassword: Joi.string().valid(Joi.ref('password')).required()
+        confirmPassword: Joi.string().valid(Joi.ref('password')).required(),
+        status: Joi.string().valid('Active', 'Inactive').allow(''),
+        dateCreated: Joi.date().iso().allow(''),
+        dateLastLoggedIn: Joi.date().iso().allow('')
     });
-    validateRequest(req, res, next, schema);
+    validateRequest(req, next, schema);
 }
 
 function updateSchema(req, res, next) {
     const schema = Joi.object({
-        title: Joi.string().allow(''),
-        firstName: Joi.string().allow(''),
-        lastName: Joi.string().allow(''),
-        role: Joi.string().valid(Role.Admin, Role.User).allow(''),
-        email: Joi.string().email().allow(''),
-        password: Joi.string().min(6).allow(''),
-        confirmPassword: Joi.string().valid(Joi.ref('password')).allow('')
+        title: Joi.string().empty(''),
+        firstName: Joi.string().empty(''),
+        lastName: Joi.string().empty(''),
+        role: Joi.string().valid(Role.Admin, Role.User).empty(''),
+        email: Joi.string().email().empty(''),
+        password: Joi.string().min(6).empty(''),
+        confirmPassword: Joi.string().valid(Joi.ref('password')).empty('')
     }).with('password', 'confirmPassword');
-    validateRequest(req, res, next, schema);
+    validateRequest(req, next, schema);
 }
 
-function updateRoleSchema(req, res, next) {
+function searchSchema(req, res, next) {
     const schema = Joi.object({
-        role: Joi.string().valid(Role.Admin, Role.User).required()
+        fullName: Joi.string().allow(''),
+        email: Joi.string().email().allow(''),
+        role: Joi.string().valid(Role.Admin, Role.User).allow(''),
+        status: Joi.string().valid('Active', 'Inactive').allow(''),
+        dateCreatedStart: Joi.date().iso().allow(''),
+        dateCreatedEnd: Joi.date().iso().allow(''),
+        dateLastLoggedInStart: Joi.date().iso().allow(''),
+        dateLastLoggedInEnd: Joi.date().iso().allow('')
     });
-    validateRequest(req, res, next, schema);
+    validateRequest(req, next, schema);
 }
 
-function modifyPermissionsSchema(req, res, next) {
-    const schema = Joi.object({
-        permissions: Joi.array().items(Joi.string()).required()
-    });
-    validateRequest(req, res, next, schema);
-}
-async function logActivity(req, res, next) {
+// POST /login route for authentication
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+
     try {
-        const { userId } = req.params;
-        const { actionType, ipAddress, browserInfo } = req.body;
+        // Find the user by email
+        const user = await User.findOne({ where: { email } });
 
-        // Call the service to log activity
-        await userService.logUserActivity(userId, actionType, ipAddress, browserInfo);
-        res.json({ success: true, message: 'Activity logged successfully' });
-    } catch (error) {
-        next(error);
-    }
-}
-
-async function retrieveActivities(req, res, next) {
-    try {
-        const { userId } = req.params;
-        const filter = {};
-
-        const { actionType, startTimestamp, endTimestamp } = req.query;
-        if (actionType) filter.actionType = actionType;
-        if (startTimestamp || endTimestamp) {
-            filter.timestamp = {};
-            if (startTimestamp) filter.timestamp[Op.gte] = new Date(startTimestamp);
-            if (endTimestamp) filter.timestamp[Op.lte] = new Date(endTimestamp);
+        if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+            return res.status(400).json({ success: false, message: 'Invalid email or password' });
         }
 
-        // Call the service to get activities
-        const activities = await userService.getUserActivities(userId, filter);
-        res.json({ success: true, data: activities });
+        // Generate JWT token
+        const token = jwt.sign(
+            { sub: user.id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' } // Token valid for 7 days
+        );
+
+        // Respond with the token
+        res.json({ success: true, token });
     } catch (error) {
-        next(error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
-}
+});
 
-// Validation schemas
-function logActivitySchema(req, res, next) {
-    const schema = Joi.object({
-        actionType: Joi.string().valid('login', 'logout', 'profile update', 'password change').required(),
-        ipAddress: Joi.string().ip().required(),
-        browserInfo: Joi.string().required()
-    });
-    validateRequest(req, res, next, schema);
-}
+// Define routes
+router.get('/', getAll);
+router.get('/:id', getById);
+router.post('/', createSchema, create);
+router.put('/:id', updateSchema, update);
+router.delete('/:id', _delete);
 
-function retrieveActivitySchema(req, res, next) {
-    const schema = Joi.object({
-        actionType: Joi.string().valid('login', 'logout', 'profile update', 'password change'),
-        startTimestamp: Joi.date(),
-        endTimestamp: Joi.date()
-    });
-    validateRequest(req, res, next, schema, 'query');
-}
+router.get('/search', searchSchema, search);
+router.get('/:userId/preferences', getPreferences);
+router.put('/:userId/preferences', updatePreferencesSchema, updatePreferences);
 
 module.exports = router;

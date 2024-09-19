@@ -1,203 +1,145 @@
 const bcrypt = require('bcryptjs');
-const db = require('_helpers/db');
-const { UserError } = require('_helpers/errors');
 const { Op } = require('sequelize');
+const db = require('_helpers/db');
 
 module.exports = {
     getAll,
     getById,
     create,
     update,
-    deleteUser,
+    delete: _delete,
     search,
-    updateRole,
-    grantPermissions,
-    revokePermissions,
-    logUserActivity,   // Added
-    getUserActivity    // Added
+    getPreferences,
+    updatePreferences
 };
 
-// Fetch all users
+// Retrieve all users
 async function getAll() {
-    try {
-        return await db.User.findAll({
-            where: {
-                isDeleted: false
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching users:', error.message || error);
-        throw new Error('Error fetching users. Please check the server logs for details.');
-    }
+    return await db.User.findAll();
 }
 
-// Fetch a user by ID
+// Retrieve a user by ID
 async function getById(id) {
-    try {
-        const user = await db.User.findByPk(id, {
-            where: {
-                isDeleted: false
-            }
-        });
-
-        if (!user) throw new UserError('User not found');
-        return user;
-    } catch (error) {
-        console.error('Error in getById:', error);
-        throw error;
-    }
+    return await getUser(id);
 }
 
 // Create a new user
 async function create(params) {
+    // Check if email already exists
     if (await db.User.findOne({ where: { email: params.email } })) {
-        throw new UserError(`Email "${params.email}" is already registered`);
+        throw 'Email "' + params.email + '" is already registered';
     }
 
-    try {
-        await db.User.create({
-            ...params,
-            passwordHash: await bcrypt.hash(params.password, 10)
-        });
-    } catch (error) {
-        throw new Error('Error creating user');
+    // Set default creation date if not provided
+    if (!params.dateCreated) {
+        params.dateCreated = new Date();
     }
+
+    // Hash the password if provided
+    if (params.password) {
+        params.passwordHash = await bcrypt.hash(params.password, 10);
+        delete params.password; // Remove plain password from params
+    }
+
+    const user = await db.User.create(params);
+    return user;
 }
 
-// Update user details
+// Update user information
 async function update(id, params) {
-    const user = await getById(id);
+    const user = await getUser(id);
 
-    if (params.email && user.email !== params.email) {
-        const emailTaken = await db.User.findOne({ where: { email: params.email } });
-        if (emailTaken) throw new UserError(`Email "${params.email}" is already registered`);
-    }
-
-    try {
-        Object.assign(user, params);
-        await user.save();
-    } catch (error) {
-        throw new Error('Error updating user');
-    }
-}
-
-// Soft delete a user
-async function deleteUser(id) {
-    const user = await getById(id);
-
-    try {
-        user.isDeleted = true;
-        await user.save();
-    } catch (error) {
-        throw new Error('Error deleting user');
-    }
-}
-
-// Search users based on criteria
-async function search(criteria, pagination) {
-    const searchOptions = {
-        where: {
-            isDeleted: false
+    // Check if username is changing and if it's already taken
+    if (params.username && user.username !== params.username) {
+        if (await db.User.findOne({ where: { username: params.username } })) {
+            throw 'Username "' + params.username + '" is already taken';
         }
+    }
+
+    // Merge changes
+    Object.assign(user, params);
+
+    // Hash the password if it's being updated
+    if (params.password) {
+        user.passwordHash = await bcrypt.hash(params.password, 10);
+    }
+
+    await user.save();
+    return user;
+}
+
+// Delete a user by ID
+async function _delete(id) {
+    const user = await getUser(id);
+    await user.destroy();
+    return { message: 'User deleted successfully' };
+}
+
+// Retrieve a user by ID (helper function)
+async function getUser(id) {
+    const user = await db.User.findByPk(id);
+    if (!user) throw 'User not found';
+    return user;
+}
+
+// Search users with filtering criteria
+async function search(params) {
+    const where = {};
+
+    if (params.fullName) {
+        const fullName = params.fullName.toLowerCase();
+        where[Op.and] = [
+            db.sequelize.where(
+                db.sequelize.fn('concat', db.sequelize.col('title'), ' ', db.sequelize.col('firstName'), ' ', db.sequelize.col('lastName')),
+                {
+                    [Op.like]: `%${fullName}%`
+                }
+            )
+        ];
+    }
+    
+    if (params.email) {
+        where.email = { [Op.like]: `%${params.email}%` };
+    }
+
+    if (params.role) {
+        where.role = params.role;
+    }
+
+    if (params.status) {
+        where.status = params.status;
+    }
+
+    if (params.dateCreatedStart && params.dateCreatedEnd) {
+        where.dateCreated = { [Op.between]: [params.dateCreatedStart, params.dateCreatedEnd] };
+    }
+
+    if (params.dateLastLoggedInStart && params.dateLastLoggedInEnd) {
+        where.dateLastLoggedIn = { [Op.between]: [params.dateLastLoggedInStart, params.dateLastLoggedInEnd] };
+    }
+
+    return await db.User.findAndCountAll({ where });
+}
+
+// Retrieve user preferences
+async function getPreferences(id) {
+    const user = await getById(id);
+    return {
+        themeColor: user.themeColor,
+        emailNotifications: user.emailNotifications,
+        language: user.language
     };
-
-    if (criteria.email) searchOptions.where.email = { [Op.like]: `%${criteria.email}%` };
-    if (criteria.name) searchOptions.where.firstName = { [Op.like]: `%${criteria.name}%` };
-
-    if (pagination.page && pagination.limit) {
-        searchOptions.limit = pagination.limit;
-        searchOptions.offset = (pagination.page - 1) * pagination.limit;
-    }
-
-    try {
-        return await db.User.findAll(searchOptions);
-    } catch (error) {
-        throw new Error('Error searching users');
-    }
 }
 
-// Update user roles
-async function updateRole(id, role) {
-    const user = await getById(id);
-    if (!['Admin', 'User'].includes(role)) throw new UserError('Invalid role');
-
-    try {
-        user.role = role;
-        await user.save();
-    } catch (error) {
-        throw new Error('Error updating user role');
-    }
-}
-
-// Grant Permissions
-async function grantPermissions(id, permissions) {
+// Update user preferences
+async function updatePreferences(id, params) {
     const user = await getById(id);
 
-    if (!Array.isArray(permissions)) throw new UserError('Permissions must be an array');
+    // Update preferences if provided
+    if (params.themeColor !== undefined) user.themeColor = params.themeColor;
+    if (params.emailNotifications !== undefined) user.emailNotifications = params.emailNotifications;
+    if (params.language !== undefined) user.language = params.language;
 
-    try {
-        user.permissions = [...new Set([...user.permissions || [], ...permissions])];
-        await user.save();
-    } catch (error) {
-        throw new Error('Error granting permissions');
-    }
-}
-
-// Revoke Permissions
-async function revokePermissions(id, permissions) {
-    const user = await getById(id);
-
-    if (!Array.isArray(permissions)) throw new UserError('Permissions must be an array');
-
-    try {
-        user.permissions = user.permissions?.filter(p => !permissions.includes(p)) || [];
-        await user.save();
-    } catch (error) {
-        throw new Error('Error revoking permissions');
-    }
-}
-
-// Log user activity
-async function logUserActivity(userId, actionType, additionalData = {}) {
-    try {
-        await db.UserActivity.create({
-            userId,
-            actionType,
-            timestamp: new Date(),
-            ipAddress: additionalData.ipAddress || null,
-            browserInfo: additionalData.browserInfo || null
-        });
-    } catch (error) {
-        console.error('Error logging user activity:', error);
-        throw new Error('Error logging user activity');
-    }
-}
-
-// Retrieve user activity
-async function getUserActivity(userId, filters = {}) {
-    try {
-        const { actionType, startDate, endDate } = filters;
-
-        const where = {
-            userId
-        };
-
-        if (actionType) {
-            where.actionType = actionType;
-        }
-
-        if (startDate || endDate) {
-            where.timestamp = {};
-            if (startDate) where.timestamp[Op.gte] = new Date(startDate);
-            if (endDate) where.timestamp[Op.lte] = new Date(endDate);
-        }
-
-        return await db.UserActivity.findAll({
-            where,
-            order: [['timestamp', 'DESC']]
-        });
-    } catch (error) {
-        console.error('Error retrieving user activity:', error);
-        throw new Error('Error retrieving user activity');
-    }
+    await user.save();
+    return { message: 'Preferences updated successfully' };
 }

@@ -3,10 +3,13 @@ const router = express.Router();
 const Joi = require('joi');
 const validateRequest = require('_middleware/validate-request');
 const activityService = require('./activity.service');
+const authenticate = require('../_middleware/authenticate');
 
 // Define routes
 router.post('/:userId/activity', logActivitySchema, logActivity);
 router.get('/:userId/activity', getActivitiesSchema, getActivities);
+// Use authentication middleware for all routes
+router.use(authenticate);
 
 module.exports = router;
 

@@ -1,4 +1,7 @@
-module.exports = {
+const Role = {
     Admin: 'Admin',
-    User: 'User'
-}
+    User: 'User',
+    Manager: 'Manager'
+};
+
+module.exports = Role;

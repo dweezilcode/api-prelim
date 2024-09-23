@@ -1,72 +1,54 @@
 const express = require('express');
 const router = express.Router();
 const Joi = require('joi');
-const productService = require('./product.service'); // Correct path to product.service.js
-const { validateRequest, authenticate, validateRole } = require('../_middleware/validate-request');
+const productService = require('./product.service');
+const { validateRequest, validateRole } = require('../_middleware/validate-request');
+const logger = require('../_middleware/logger');
 
-// Use authentication middleware for all routes
-router.use(authenticate);
-
-// Routes
+// Middleware to validate roles for creating and updating products
 router.post('/', validateRole(['Admin', 'Manager']), createProductSchema, createProduct);
 router.put('/:productId', validateRole(['Admin', 'Manager']), updateProductSchema, updateProduct);
 
 module.exports = router;
 
-// Controller functions
-
-// Create a new product
 async function createProduct(req, res, next) {
     try {
-        const product = await productService.create(req.body);
-        return res.status(201).json({
-            success: true,
-            message: 'Product created successfully!',
-            product
-        });
+        const product = await productService.createProduct(req.body);
+        logger.info('Product created successfully:', product.name);
+        res.status(201).json({ success: true, message: 'Product created successfully!', product });
     } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        logger.error('Error creating product:', error.message);
+        res.status(400).json({ success: false, message: error.message });
     }
 }
 
-// Update an existing product
 async function updateProduct(req, res, next) {
     try {
-        const product = await productService.update(req.params.productId, req.body);
-        return res.json({
-            success: true,
-            message: 'Product updated successfully!',
-            product
-        });
+        const product = await productService.updateProduct(req.params.productId, req.body);
+        logger.info(`Product updated successfully: ${req.params.productId}`);
+        res.status(204).send(); // Alternatively, you can send a success message.
     } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        logger.error('Error updating product:', error.message);
+        res.status(400).json({ success: false, message: error.message });
     }
 }
 
-// Joi schema validation for creating a product
 function createProductSchema(req, res, next) {
     const schema = Joi.object({
-        name: Joi.string().required(), // Name should be a string and is required
-        description: Joi.string().allow('').optional(), // Description can be an empty string or optional
-        price: Joi.number().precision(2).required(), // Price should be a number with 2 decimal points
-        status: Joi.string().valid('active', 'deleted').optional() // Status should be either 'active' or 'deleted'
+        name: Joi.string().required(),
+        description: Joi.string().required(),
+        price: Joi.number().required(),
+        status: Joi.string().valid('Available', 'Deleted').default('Available')
     });
-    validateRequest(req, next, schema);
+    validateRequest(req, res, next, schema);
 }
 
-// Joi schema validation for updating a product
 function updateProductSchema(req, res, next) {
     const schema = Joi.object({
-        name: Joi.string().allow('').optional(), // Name can be an empty string or optional
-        description: Joi.string().allow('').optional(), // Description can be an empty string or optional
-        price: Joi.number().precision(2).optional(), // Price can be optional
-        status: Joi.string().valid('active', 'deleted').optional() // Status should be either 'active' or 'deleted'
+        name: Joi.string().empty(''),
+        description: Joi.string().empty(''),
+        price: Joi.number().empty(''),
+        status: Joi.string().valid('Available', 'Deleted').empty('')
     });
-    validateRequest(req, next, schema);
+    validateRequest(req, res, next, schema);
 }

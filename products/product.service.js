@@ -1,70 +1,39 @@
-const { Op } = require('sequelize'); // Import Sequelize's Op if you need to use it for complex queries
-const db = require('_helpers/db'); // Import your database instance
+const { Op } = require('sequelize');
+const db = require('../_helpers/db');
+const logger = require('../_middleware/logger');
 
-module.exports = {
-    createProduct,
-    updateProduct,
-    getProduct,
-    getProducts
-};
-
-// Create a new product
 async function createProduct(productData) {
-    try {
-        return await db.Product.create(productData);
-    } catch (error) {
-        console.error('Error creating product:', error);
-        throw error;
-    }
+    const product = await db.Product.create(productData);
+    logger.info(`Product created: ID ${product.id}, Name: ${product.name}`); // Log creation
+    return product;
 }
 
-// Update an existing product
 async function updateProduct(productId, updateData) {
-    try {
-        const product = await db.Product.findByPk(productId);
-        if (!product) {
-            throw new Error('Product not found');
-        }
-        return await product.update(updateData);
-    } catch (error) {
-        console.error('Error updating product:', error);
-        throw error;
-    }
+    const product = await db.Product.findByPk(productId);
+    if (!product) throw new Error('Product not found');
+    const updatedProduct = await product.update(updateData);
+    logger.info(`Product updated: ID ${product.id}, Name: ${product.name}`); // Log update
+    return updatedProduct;
 }
 
-// Retrieve a single product by ID
 async function getProduct(productId) {
-    try {
-        return await db.Product.findByPk(productId);
-    } catch (error) {
-        console.error('Error retrieving product:', error);
-        throw error;
-    }
+    const product = await db.Product.findByPk(productId);
+    logger.info(`Product retrieved: ID ${productId}, Name: ${product?.name}`); // Log retrieval
+    return product;
 }
 
-// Retrieve multiple products with optional filters
 async function getProducts(filters) {
-    try {
-        const where = {};
-
-        // Add optional filters
-        if (filters.name) {
-            where.name = { [Op.like]: `%${filters.name}%` };
-        }
-
-        if (filters.status) {
-            where.status = filters.status;
-        }
-
-        if (filters.priceMin && filters.priceMax) {
-            where.price = {
-                [Op.between]: [parseFloat(filters.priceMin), parseFloat(filters.priceMax)]
-            };
-        }
-
-        return await db.Product.findAll({ where });
-    } catch (error) {
-        console.error('Error retrieving products:', error);
-        throw error;
+    const where = {};
+    if (filters.name) where.name = { [Op.like]: `%${filters.name}%` };
+    if (filters.status) where.status = filters.status;
+    if (filters.priceMin && filters.priceMax) {
+        where.price = {
+            [Op.between]: [parseFloat(filters.priceMin), parseFloat(filters.priceMax)]
+        };
     }
+    const products = await db.Product.findAll({ where });
+    logger.info(`Products retrieved: ${products.length} found`); // Log retrieval
+    return products;
 }
+
+module.exports = { createProduct, updateProduct, getProduct, getProducts };

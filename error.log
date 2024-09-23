@@ -1,0 +1,39 @@
+{"level":"error","timestamp":"2024-09-22T19:48:20.748Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-22T20:07:55.078Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-22T20:08:13.422Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-22T20:09:00.317Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-22T20:11:38.358Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-22T20:11:53.734Z"}
+{"level":"error","message":"Error updating inventory: Cannot read properties of undefined (reading 'update')","stack":"TypeError: Cannot read properties of undefined (reading 'update')\n    at C:\\Users\\Queenie\\Downloads\\api-prelim\\inventory\\inventory.controller.js:30:25\n    at Layer.handle [as handle_request] (C:\\Users\\Queenie\\Downloads\\api-prelim\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at next (C:\\Users\\Queenie\\Downloads\\api-prelim\\node_modules\\express\\lib\\router\\route.js:149:13)\n    at middleware (C:\\Users\\Queenie\\Downloads\\api-prelim\\node_modules\\express-validator\\lib\\middlewares\\check.js:16:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)","timestamp":"2024-09-22T20:36:56.537Z"}
+{"level":"error","message":"Error updating inventory: Cannot read properties of undefined (reading 'update')","stack":"TypeError: Cannot read properties of undefined (reading 'update')\n    at C:\\Users\\Queenie\\Downloads\\api-prelim\\inventory\\inventory.controller.js:30:25\n    at Layer.handle [as handle_request] (C:\\Users\\Queenie\\Downloads\\api-prelim\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at next (C:\\Users\\Queenie\\Downloads\\api-prelim\\node_modules\\express\\lib\\router\\route.js:149:13)\n    at middleware (C:\\Users\\Queenie\\Downloads\\api-prelim\\node_modules\\express-validator\\lib\\middlewares\\check.js:16:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)","timestamp":"2024-09-22T20:38:03.978Z"}
+{"level":"error","message":"Error updating inventory: Cannot read properties of undefined (reading 'update')","stack":"TypeError: Cannot read properties of undefined (reading 'update')\n    at C:\\Users\\Queenie\\Downloads\\api-prelim\\inventory\\inventory.controller.js:30:25\n    at Layer.handle [as handle_request] (C:\\Users\\Queenie\\Downloads\\api-prelim\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at next (C:\\Users\\Queenie\\Downloads\\api-prelim\\node_modules\\express\\lib\\router\\route.js:149:13)\n    at middleware (C:\\Users\\Queenie\\Downloads\\api-prelim\\node_modules\\express-validator\\lib\\middlewares\\check.js:16:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)","timestamp":"2024-09-22T20:38:08.005Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-22T21:16:49.043Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-22T21:16:55.499Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-22T21:18:35.475Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-22T21:21:18.981Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-22T21:27:36.502Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-22T21:29:29.609Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-22T21:31:11.443Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-22T21:34:03.557Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-22T21:34:30.320Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-22T22:39:35.619Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-22T23:16:42.786Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-22T23:19:36.301Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-22T23:23:16.667Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-22T23:56:13.878Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-22T23:56:34.224Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-22T23:56:42.305Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-23T00:06:15.789Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-23T00:14:33.422Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-23T04:04:45.519Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-23T04:14:01.487Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-23T04:14:59.872Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-23T13:50:01.097Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-23T14:39:05.953Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-23T14:40:52.385Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-23T14:42:52.199Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-23T14:45:38.383Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-23T14:45:42.128Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-23T14:48:26.874Z"}
+{"level":"error","message":"Login error:","timestamp":"2024-09-23T14:52:24.231Z"}
+{"level":"error","message":"Database initialization error:","timestamp":"2024-09-23T14:55:01.357Z"}

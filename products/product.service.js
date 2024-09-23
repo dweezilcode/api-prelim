@@ -1,39 +1,33 @@
-const { Op } = require('sequelize');
-const db = require('../_helpers/db');
-const logger = require('../_middleware/logger');
+const Product = require('./product.model');
 
-async function createProduct(productData) {
-    const product = await db.Product.create(productData);
-    logger.info(`Product created: ID ${product.id}, Name: ${product.name}`); // Log creation
-    return product;
+// Get all products
+async function getAll() {
+    return await Product.findAll();
 }
 
-async function updateProduct(productId, updateData) {
-    const product = await db.Product.findByPk(productId);
-    if (!product) throw new Error('Product not found');
-    const updatedProduct = await product.update(updateData);
-    logger.info(`Product updated: ID ${product.id}, Name: ${product.name}`); // Log update
-    return updatedProduct;
+// Get product by ID
+async function getById(id) {
+    return await Product.findByPk(id);
 }
 
-async function getProduct(productId) {
-    const product = await db.Product.findByPk(productId);
-    logger.info(`Product retrieved: ID ${productId}, Name: ${product?.name}`); // Log retrieval
-    return product;
+// Create new product
+async function create(productData) {
+    await Product.create(productData);
 }
 
-async function getProducts(filters) {
-    const where = {};
-    if (filters.name) where.name = { [Op.like]: `%${filters.name}%` };
-    if (filters.status) where.status = filters.status;
-    if (filters.priceMin && filters.priceMax) {
-        where.price = {
-            [Op.between]: [parseFloat(filters.priceMin), parseFloat(filters.priceMax)]
-        };
-    }
-    const products = await db.Product.findAll({ where });
-    logger.info(`Products retrieved: ${products.length} found`); // Log retrieval
-    return products;
+// Update existing product
+async function update(id, productData) {
+    const product = await getById(id);
+    if (!product) throw 'Product not found';
+    Object.assign(product, productData);
+    await product.save();
 }
 
-module.exports = { createProduct, updateProduct, getProduct, getProducts };
+// Delete product
+async function deleteProduct(id) {
+    const product = await getById(id);
+    if (!product) throw 'Product not found';
+    await product.destroy();
+}
+
+module.exports = { getAll, getById, create, update, delete: deleteProduct };

@@ -1,38 +1,15 @@
 const { DataTypes } = require('sequelize');
-const logger = require('../_middleware/logger');
+const sequelize = require('../_helpers/db');
 
-module.exports = (sequelize) => {
-    const Inventory = sequelize.define('Inventory', {
-        productId: { 
-            type: DataTypes.INTEGER, 
-            allowNull: false,
-            unique: true, // Ensure each product has a unique inventory record
-            references: {
-                model: 'Products', // Assuming your products table is named 'Products'
-                key: 'id'
-            }
-        },
-        quantity: { 
-            type: DataTypes.INTEGER, 
-            allowNull: false,
-            defaultValue: 0 // Default quantity to 0 if not provided
-        }
-    });
+// Define the Inventory model
+const Inventory = sequelize.define('Inventory', {
+    productId: { type: DataTypes.INTEGER, allowNull: false },
+    quantity: { type: DataTypes.INTEGER, allowNull: false },
+});
 
-    // Log creation event
-    Inventory.addHook('afterCreate', (inventory) => {
-        logger.info(`Inventory created: Product ID ${inventory.productId}, Quantity: ${inventory.quantity}`);
-    });
+// Optional: Define associations if you have a Product model
+// Inventory.associate = (models) => {
+//     Inventory.belongsTo(models.Product, { foreignKey: 'productId' });
+// };
 
-    // Log update event
-    Inventory.addHook('afterUpdate', (inventory) => {
-        logger.info(`Inventory updated: Product ID ${inventory.productId}, Quantity: ${inventory.quantity}`);
-    });
-
-    // Log deletion event
-    Inventory.addHook('afterDestroy', (inventory) => {
-        logger.info(`Inventory deleted: Product ID ${inventory.productId}`);
-    });
-
-    return Inventory;
-};
+module.exports = Inventory;

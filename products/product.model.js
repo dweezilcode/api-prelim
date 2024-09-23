@@ -1,28 +1,11 @@
 const { DataTypes } = require('sequelize');
-const logger = require('../_middleware/logger');
+const sequelize = require('../_helpers/db');
 
-module.exports = (sequelize) => {
-    const Product = sequelize.define('Product', {
-        name: { type: DataTypes.STRING, allowNull: false },
-        description: { type: DataTypes.TEXT, allowNull: true },
-        price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
-        status: { type: DataTypes.ENUM('active', 'deleted'), defaultValue: 'active' }
-    });
+// Define the Product model
+const Product = sequelize.define('Product', {
+    name: { type: DataTypes.STRING, allowNull: false },
+    description: { type: DataTypes.STRING },
+    price: { type: DataTypes.DECIMAL, allowNull: false },
+});
 
-    // Log creation event
-    Product.addHook('afterCreate', (product) => {
-        logger.info(`Product created: ID ${product.id}, Name: ${product.name}`);
-    });
-
-    // Log update event
-    Product.addHook('afterUpdate', (product) => {
-        logger.info(`Product updated: ID ${product.id}, Name: ${product.name}`);
-    });
-
-    // Log deletion event
-    Product.addHook('afterDestroy', (product) => {
-        logger.info(`Product deleted: ID ${product.id}, Name: ${product.name}`);
-    });
-
-    return Product;
-};
+module.exports = Product;

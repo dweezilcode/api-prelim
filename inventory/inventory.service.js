@@ -1,19 +1,20 @@
-const db = require('../_helpers/db');
-const logger = require('../_middleware/logger');
+const Inventory = require('./inventory.model');
 
-async function updateInventory(productId, quantity) {
-    const inventory = await db.Inventory.findOne({ where: { productId } });
-    if (inventory) {
-        inventory.quantity += quantity;
-        return await inventory.save();
+// Get all inventory
+async function getAll() {
+    return await Inventory.findAll();
+}
+
+// Update inventory
+async function update(inventoryData) {
+    const inventory = await Inventory.findOne({ where: { productId: inventoryData.productId } });
+    
+    if (!inventory) {
+        await Inventory.create(inventoryData);
     } else {
-        return await db.Inventory.create({ productId, quantity });
+        inventory.quantity = inventoryData.quantity;
+        await inventory.save();
     }
 }
 
-async function checkStockAvailability(productId) {
-    const inventory = await db.Inventory.findOne({ where: { productId } });
-    return inventory ? inventory.quantity : 0;
-}
-
-module.exports = { updateInventory, checkStockAvailability };
+module.exports = { getAll, update };

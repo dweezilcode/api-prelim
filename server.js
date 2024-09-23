@@ -1,47 +1,42 @@
-require('rootpath')();
+require('dotenv').config(); // Load environment variables from .env file
+
 const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const logger = require('./_middleware/logger'); // Import the logger
-const authenticateToken = require('./_middleware/auth.middleware'); // Import the authentication middleware
+const bodyParser = require('body-parser');
+const sequelize = require('./_helpers/db');
 
-dotenv.config();
+// Import middleware
+const authenticate = require('./_middleware/authenticate');
+const authorize = require('./_middleware/role');
 
-const app = express();
-const errorHandler = require('./_middleware/error-handler');
-const authRoutes = require('./auth/auth.routes'); 
-const usersController = require('./users/users.controller');
-const activityController = require('./users/activity.controller'); 
+// Import controllers
 const productController = require('./products/product.controller');
 const inventoryController = require('./inventory/inventory.controller');
+const userController = require('./users/user.controller'); // Correct path for user controller
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+// Import config
+const config = require('./config.json'); // Corrected path
 
-// Routes
-app.use('/api/auth', authRoutes); // Authentication routes
-app.use('/api/users', authenticateToken, usersController); // Protect user management routes
-app.use('/api/users/:userId/activity', activityController); // Nesting activity routes under user ID
-app.use('/api/products', authenticateToken, productController); // Protect product management routes
-app.use('/api/inventory', authenticateToken, inventoryController); // Protect inventory management routes
+// Initialize express app
+const app = express();
+app.use(bodyParser.json());
 
-// Global Error Handler Middleware
-app.use(errorHandler);
+// Public routes (Accessible by anyone)
+app.post('/api/register', userController.register); // Add registration route
+app.get('/api/products', productController.getAll);
+app.get('/api/products/:id', productController.getById);
+app.post('/api/login', userController.login); // Add login route
 
-// Server Initialization
-const jwtSecret = process.env.JWT_SECRET;
-const dbHost = process.env.DB_HOST;
-const port = process.env.PORT || 4000;
 
-if (!jwtSecret || !dbHost) {
-    logger.error('Missing required environment variables.');
-    process.exit(1);
-}
+// Protected routes (Accessible by administrator/manager only)
+app.post('/api/products', authenticate, authorize(['administrator', 'manager']), productController.create);
+app.put('/api/products/:id', authenticate, authorize(['administrator', 'manager']), productController.update);
+app.delete('/api/products/:id', authenticate, authorize(['administrator', 'manager']), productController.remove);
 
-logger.info(`JWT Secret: ${jwtSecret}`);
-logger.info(`Database Host: ${dbHost}`);
-logger.info(`Server running on port ${port}`);
+app.get('/api/inventory', authenticate, authorize(['administrator', 'manager']), inventoryController.getAll);
+app.post('/api/inventory', authenticate, authorize(['administrator', 'manager']), inventoryController.update);
 
-app.listen(port, () => logger.info(`Server listening on port ${port}`));
+// Sync models and start the server
+const PORT = process.env.PORT || 4000; // Change to 4000
+sequelize.sync().then(() => {
+    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+});

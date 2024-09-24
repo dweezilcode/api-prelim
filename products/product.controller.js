@@ -30,4 +30,18 @@ async function remove(req, res) {
     res.json({ message: 'Product deleted' });
 }
 
-module.exports = { getAll, getById, create, update, remove };
+async function checkAvailability(req, res) {
+    const productId = req.params.id;
+    const product = await productService.getById(productId);
+
+    if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Assuming your product model has a 'stock' field or similar
+    const availability = product.stock > 0;
+
+    res.json({ productId, available: availability });
+}
+
+module.exports = { getAll, getById, create, update, remove, checkAvailability };

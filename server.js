@@ -13,9 +13,6 @@ const productController = require('./products/product.controller');
 const inventoryController = require('./inventory/inventory.controller');
 const userController = require('./users/user.controller'); // Correct path for user controller
 
-// Import config
-const config = require('./config.json'); // Corrected path
-
 // Initialize express app
 const app = express();
 app.use(bodyParser.json());
@@ -25,7 +22,6 @@ app.post('/api/register', userController.register); // Add registration route
 app.get('/api/products', productController.getAll);
 app.get('/api/products/:id', productController.getById);
 app.post('/api/login', userController.login); // Add login route
-
 
 // Protected routes (Accessible by administrator/manager only)
 app.post('/api/products', authenticate, authorize(['administrator', 'manager']), productController.create);

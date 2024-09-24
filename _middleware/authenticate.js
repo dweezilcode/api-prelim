@@ -1,17 +1,25 @@
 const jwt = require('jsonwebtoken');
+const config = require('../config.json'); // Load secret from config file
 
 module.exports = (req, res, next) => {
-    const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Extract Bearer token
 
+    // If no token is provided, return 403
     if (!token) {
-        return res.status(403).send('No token provided.');
+        return res.status(403).json({ message: 'No token provided.' });
     }
 
-    jwt.verify(token, 'your_secret_key', (err, decoded) => {
+    // Verify the token
+    jwt.verify(token, config.secret, (err, decoded) => {
         if (err) {
-            return res.status(500).send('Failed to authenticate token.');
+            return res.status(500).json({ message: 'Failed to authenticate token.' });
         }
-        req.userId = decoded.id;
+
+        // Set the user information to request, this includes user ID and role
+        req.user = { id: decoded.sub, role: decoded.role };
+
+        // Proceed to next middleware
         next();
     });
 };

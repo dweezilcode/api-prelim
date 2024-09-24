@@ -1,72 +1,33 @@
-const express = require('express');
-const router = express.Router();
-const Joi = require('joi');
-const productService = require('./product.service'); // Correct path to product.service.js
-const { validateRequest, authenticate, validateRole } = require('../_middleware/validate-request');
+const productService = require('./product.service');
 
-// Use authentication middleware for all routes
-router.use(authenticate);
-
-// Routes
-router.post('/', validateRole(['Admin', 'Manager']), createProductSchema, createProduct);
-router.put('/:productId', validateRole(['Admin', 'Manager']), updateProductSchema, updateProduct);
-
-module.exports = router;
-
-// Controller functions
-
-// Create a new product
-async function createProduct(req, res, next) {
-    try {
-        const product = await productService.create(req.body);
-        return res.status(201).json({
-            success: true,
-            message: 'Product created successfully!',
-            product
-        });
-    } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        });
-    }
+// Get all products
+async function getAll(req, res) {
+    const products = await productService.getAll();
+    res.json(products);
 }
 
-// Update an existing product
-async function updateProduct(req, res, next) {
-    try {
-        const product = await productService.update(req.params.productId, req.body);
-        return res.json({
-            success: true,
-            message: 'Product updated successfully!',
-            product
-        });
-    } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        });
-    }
+// Get product by ID
+async function getById(req, res) {
+    const product = await productService.getById(req.params.id);
+    res.json(product);
 }
 
-// Joi schema validation for creating a product
-function createProductSchema(req, res, next) {
-    const schema = Joi.object({
-        name: Joi.string().required(), // Name should be a string and is required
-        description: Joi.string().allow('').optional(), // Description can be an empty string or optional
-        price: Joi.number().precision(2).required(), // Price should be a number with 2 decimal points
-        status: Joi.string().valid('active', 'deleted').optional() // Status should be either 'active' or 'deleted'
-    });
-    validateRequest(req, next, schema);
+// Create new product (Administrator/Manager)
+async function create(req, res) {
+    await productService.create(req.body);
+    res.status(201).json({ message: 'Product created' });
 }
 
-// Joi schema validation for updating a product
-function updateProductSchema(req, res, next) {
-    const schema = Joi.object({
-        name: Joi.string().allow('').optional(), // Name can be an empty string or optional
-        description: Joi.string().allow('').optional(), // Description can be an empty string or optional
-        price: Joi.number().precision(2).optional(), // Price can be optional
-        status: Joi.string().valid('active', 'deleted').optional() // Status should be either 'active' or 'deleted'
-    });
-    validateRequest(req, next, schema);
+// Update existing product (Administrator/Manager)
+async function update(req, res) {
+    await productService.update(req.params.id, req.body);
+    res.json({ message: 'Product updated' });
 }
+
+// Delete product (Administrator/Manager)
+async function remove(req, res) {
+    await productService.delete(req.params.id);
+    res.json({ message: 'Product deleted' });
+}
+
+module.exports = { getAll, getById, create, update, remove };

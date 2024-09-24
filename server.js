@@ -1,35 +1,38 @@
-require('rootpath')(); // Ensure the root path is set correctly
+require('dotenv').config(); // Load environment variables from .env file
+
 const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv'); // Import dotenv to load environment variables
-dotenv.config(); // Load environment variables from the .env file
+const bodyParser = require('body-parser');
+const sequelize = require('./_helpers/db');
 
+// Import middleware
+const authenticate = require('./_middleware/authenticate');
+const authorize = require('./_middleware/role');
+
+// Import controllers
+const productController = require('./products/product.controller');
+const inventoryController = require('./inventory/inventory.controller');
+const userController = require('./users/user.controller'); // Correct path for user controller
+
+// Initialize express app
 const app = express();
-const errorHandler = require('./_middleware/error-handler'); // Adjust the path as needed
-const usersController = require('./users/users.controller'); // Users controller
-const activityController = require('./activity/activity.controller'); // Activity controller
-const productController = require('./products/product.controller'); // Product controller
+app.use(bodyParser.json());
 
-// Middleware
-app.use(express.json()); // Parse JSON request bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded request bodies
-app.use(cors()); // Enable Cross-Origin Resource Sharing (CORS)
+// Public routes (Accessible by anyone)
+app.post('/api/register', userController.register); // Add registration route
+app.get('/api/products', productController.getAll);
+app.get('/api/products/:id', productController.getById);
+app.post('/api/login', userController.login); // Add login route
 
-// Routes
-app.use('/api/users', usersController); // User routes
-app.use('/api/activity', activityController); // Activity routes
-app.use('/api/products', productController); // Product routes
+// Protected routes (Accessible by administrator/manager only)
+app.post('/api/products', authenticate, authorize(['administrator', 'manager']), productController.create);
+app.put('/api/products/:id', authenticate, authorize(['administrator', 'manager']), productController.update);
+app.delete('/api/products/:id', authenticate, authorize(['administrator', 'manager']), productController.remove);
 
-// Global Error Handler Middleware
-app.use(errorHandler); // Handle errors globally
+app.get('/api/inventory', authenticate, authorize(['administrator', 'manager']), inventoryController.getAll);
+app.post('/api/inventory', authenticate, authorize(['administrator', 'manager']), inventoryController.update);
 
-// Server Initialization
-const jwtSecret = process.env.JWT_SECRET;
-const dbHost = process.env.DB_HOST;
-const port = process.env.PORT || 4000;
-
-console.log(`JWT Secret: ${jwtSecret}`);
-console.log(`Database Host: ${dbHost}`);
-console.log(`Server running on port ${port}`);
-
-app.listen(port, () => console.log(`Server listening on port ${port}`));
+// Sync models and start the server
+const PORT = process.env.PORT || 4000; // Change to 4000
+sequelize.sync().then(() => {
+    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+});

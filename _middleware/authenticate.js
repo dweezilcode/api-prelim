@@ -1,24 +1,25 @@
 const jwt = require('jsonwebtoken');
-const secret = process.env.JWT_SECRET; // Your JWT secret from environment variables
+const config = require('../config.json'); // Load secret from config file
 
-module.exports = function authenticate(req, res, next) {
+module.exports = (req, res, next) => {
     const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Extract Bearer token
 
-    if (!authHeader) {
-        return res.status(401).json({ message: 'Access Denied: No token provided.' });
-    }
-
-    const token = authHeader.split(' ')[1]; // Assuming the format: 'Bearer TOKEN'
+    // If no token is provided, return 403
     if (!token) {
-        return res.status(401).json({ message: 'Access Denied: Malformed token.' });
+        return res.status(403).json({ message: 'No token provided.' });
     }
 
-    jwt.verify(token, secret, (err, user) => {
+    // Verify the token
+    jwt.verify(token, config.secret, (err, decoded) => {
         if (err) {
-            return res.status(403).json({ message: 'Invalid Token' });
+            return res.status(500).json({ message: 'Failed to authenticate token.' });
         }
 
-        req.user = user; // Attach user info to request object
-        next(); // Pass control to the next middleware or route handler
+        // Set the user information to request, this includes user ID and role
+        req.user = { id: decoded.sub, role: decoded.role };
+
+        // Proceed to next middleware
+        next();
     });
 };

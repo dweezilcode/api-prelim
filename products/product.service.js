@@ -30,4 +30,10 @@ async function deleteProduct(id) {
     await product.destroy();
 }
 
-module.exports = { getAll, getById, create, update, delete: deleteProduct };
+async function checkStockAvailability(productId) {
+    const product = await getById(productId);
+    if (!product) throw 'Product not found';
+    return product.stock > 0; // Return true if stock is greater than 0
+}
+
+module.exports = { getAll, getById, create, update, delete: deleteProduct, checkStockAvailability };

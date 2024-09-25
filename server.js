@@ -27,7 +27,7 @@ app.post('/api/login', userController.login); // Add login route
 app.post('/api/products', authenticate, authorize(['administrator', 'manager']), productController.create);
 app.put('/api/products/:id', authenticate, authorize(['administrator', 'manager']), productController.update);
 app.delete('/api/products/:id', authenticate, authorize(['administrator', 'manager']), productController.remove);
-
+app.get('/api/products/:id/availability', productController.checkAvailability); // New endpoint
 app.get('/api/inventory', authenticate, authorize(['administrator', 'manager']), inventoryController.getAll);
 app.post('/api/inventory', authenticate, authorize(['administrator', 'manager']), inventoryController.update);
 

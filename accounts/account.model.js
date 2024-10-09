@@ -1,8 +1,6 @@
 const { DataTypes } = require('sequelize');
 
-module.exports = model;
-
-function model(sequelize) {
+module.exports = (sequelize) => {
     const attributes = {
         email: { type: DataTypes.STRING, allowNull: false },
         passwordHash: { type: DataTypes.STRING, allowNull: false },
@@ -25,18 +23,14 @@ function model(sequelize) {
     };
 
     const options = {
-        // disable default timestamp fields (createdAt and updatedAt) timestamps: false,
         timestamps: false,
         defaultScope: {
-            // exclude password hash by default
             attributes: { exclude: ['passwordHash'] }
         },
         scopes: {
-            // include hash with this scope
-            withHash: { attributes: {}, }
+            withHash: { attributes: {} }
         }
     };
 
-    return sequelize.define('account', attributes, options);
-}
-    
+    return sequelize.define('Account', attributes, options); // Changed to 'Account' for consistency
+};

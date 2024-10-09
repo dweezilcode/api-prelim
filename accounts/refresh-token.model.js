@@ -1,15 +1,13 @@
 const { DataTypes } = require('sequelize');
 
-module.exports = model;
-
-function model(sequelize) {
+module.exports = (sequelize) => {
     const attributes = {
-        token: {type: DataTypes.STRING },
+        token: { type: DataTypes.STRING },
         expires: { type: DataTypes.DATE },
-        created: {type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+        created: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
         createdByIp: { type: DataTypes.STRING },
         revoked: { type: DataTypes.DATE },
-        revokedByIp: {type: DataTypes.STRING },
+        revokedByIp: { type: DataTypes.STRING },
         replacedByToken: { type: DataTypes.STRING },
         isExpired: {
             type: DataTypes.VIRTUAL,
@@ -22,9 +20,8 @@ function model(sequelize) {
     };
 
     const options = {
-        // disable default timestamp fields (createdAt and updatedAt)
         timestamps: false
     };
 
-    return sequelize.define('refreshToken', attributes, options);
-}
+    return sequelize.define('RefreshToken', attributes, options); // Changed to 'RefreshToken' for consistency
+};

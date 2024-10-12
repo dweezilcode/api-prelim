@@ -1,17 +1,26 @@
 {
     "name": "api-prelim",
     "version": "1.0.0",
+<<<<<<< HEAD
     "description": "NodeJS and MySQL API for Email Sign Up with Verification, Authentication & Forgot Password",
     "license": "MIT",
     "scripts": {
         "start": "node ./server.js",
         "start:dev": "nodemon ./server.js"
+=======
+    "description": "Product and Inventory Management System with Email Sign Up, Verification, and Authentication",
+    "license": "MIT",
+    "scripts": {
+        "start": "node server.js",
+        "start:dev": "nodemon server.js"
+>>>>>>> 67bb0ddd1959aa525b3bb683796e01ece9c7f457
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
         "body-parser": "^1.19.0",
         "cookie-parser": "^1.4.5",
         "cors": "^2.8.5",
+<<<<<<< HEAD
         "express": "^4.17.1",
         "express-jwt": "^6.0.0",
         "joi": "^17.2.1",
@@ -20,6 +29,17 @@
         "nodemailer": "^6.9.15",
         "rootpath": "^0.1.2",
         "sequelize": "^6.3.4",
+=======
+        "dotenv": "^16.4.5",
+        "express": "^4.21.0",
+        "express-jwt": "^6.0.0",
+        "joi": "^17.2.1",
+        "jsonwebtoken": "^9.0.2",
+        "mysql2": "^2.3.3",
+        "nodemailer": "^6.4.11",
+        "rootpath": "^0.1.2",
+        "sequelize": "^6.37.3",
+>>>>>>> 67bb0ddd1959aa525b3bb683796e01ece9c7f457
         "swagger-ui-express": "^4.6.3",
         "yamljs": "^0.3.0"
     },

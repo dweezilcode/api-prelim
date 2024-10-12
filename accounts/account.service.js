@@ -23,7 +23,10 @@ module.exports = {
     delete: _delete
 };
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 67bb0ddd1959aa525b3bb683796e01ece9c7f457
 async function authenticate({ email, password, ipAddress }) {
     const account = await db.Account.scope('withHash').findOne({ where: { email } });
 
@@ -31,6 +34,7 @@ async function authenticate({ email, password, ipAddress }) {
         throw 'Email or password is incorrect';
     }
 
+<<<<<<< HEAD
     // Authentication successful, generate jwt and refresh tokens
     const jwtToken = generateJwtToken(account);
     const refreshToken = generateRefreshToken(account, ipAddress);
@@ -41,6 +45,16 @@ async function authenticate({ email, password, ipAddress }) {
     // Return basic details and tokens
     return {
         ...basicDetails(account),
+=======
+    // authentication successful so generate jwt and refresh tokens
+    const jwtToken = generateJwtToken(account);
+    const refreshToken = generateRefreshToken (account, ipAddress);
+    // save refresh token
+    await refreshToken.save();
+    // return basic details and tokens
+    return {
+        ...basicDetails (account),
+>>>>>>> 67bb0ddd1959aa525b3bb683796e01ece9c7f457
         jwtToken,
         refreshToken: refreshToken.token
     };
@@ -265,7 +279,11 @@ async function sendVerificationEmail(account, origin) {
 async function sendAlreadyRegisteredEmail(email, origin) {
     let message;
     if (origin) {
+<<<<<<< HEAD
         message = `
+=======
+        message - `
+>>>>>>> 67bb0ddd1959aa525b3bb683796e01ece9c7f457
         <p> if you don't know your password please visit <a href="${origin}/account/forgot-password">forgot password</a> page.</p>`;
     } else {
         message = `
@@ -301,7 +319,21 @@ async function sendPasswordResetEmail(account, origin) {
     });
 }
     
+<<<<<<< HEAD
   
+=======
+    
+
+
+
+    
+
+
+
+    
+    
+    
+>>>>>>> 67bb0ddd1959aa525b3bb683796e01ece9c7f457
     
     
     

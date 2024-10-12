@@ -26,7 +26,11 @@ module.exports = router;
 // Authentication schema
 function authenticateSchema(req, res, next) {
     const schema = Joi.object({
+<<<<<<< HEAD
         email: Joi.string().email().required(),
+=======
+        email: Joi.string().required(),
+>>>>>>> 67bb0ddd1959aa525b3bb683796e01ece9c7f457
         password: Joi.string().required()
     });
     validateRequest(req, next, schema);
@@ -36,6 +40,7 @@ function authenticateSchema(req, res, next) {
 function authenticate(req, res, next) {
     const { email, password } = req.body;
     const ipAddress = req.ip;
+<<<<<<< HEAD
   
     accountService.authenticate({ email, password, ipAddress })
       .then(({ refreshToken, ...account }) => {
@@ -46,6 +51,16 @@ function authenticate(req, res, next) {
   
   }
 
+=======
+
+    accountService.authenticate({ email, password, ipAddress })
+        .then(({ refreshToken, ...account }) => {
+            setTokenCookie(res, refreshToken);
+            res.json(account);
+        })
+        .catch(next);
+}
+>>>>>>> 67bb0ddd1959aa525b3bb683796e01ece9c7f457
 
 // Refresh token
 function refreshToken(req, res, next) {

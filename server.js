@@ -1,38 +1,31 @@
-require('dotenv').config(); // Load environment variables from .env file
-
+require('rootpath')();
 const express = require('express');
-const bodyParser = require('body-parser');
-const sequelize = require('./_helpers/db');
-
-// Import middleware
-const authenticate = require('./_middleware/authenticate');
-const authorize = require('./_middleware/role');
-
-// Import controllers
-const productController = require('./products/product.controller');
-const inventoryController = require('./inventory/inventory.controller');
-const userController = require('./users/user.controller'); // Correct path for user controller
-
-// Initialize express app
 const app = express();
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const cors = require('cors');
+const errorHandler = require('_middleware/error-handler');
+
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(cookieParser());
 
-// Public routes (Accessible by anyone)
-app.post('/api/register', userController.register); // Add registration route
-app.get('/api/products', productController.getAll);
-app.get('/api/products/:id', productController.getById);
-app.post('/api/login', userController.login); // Add login route
+// allow cors requests from any origin and with credentials
+app.use(cors({ origin: (origin, callback) => callback(null, true), credentials: true }));
 
-// Protected routes (Accessible by administrator/manager only)
-app.post('/api/products', authenticate, authorize(['administrator', 'manager']), productController.create);
-app.put('/api/products/:id', authenticate, authorize(['administrator', 'manager']), productController.update);
-app.delete('/api/products/:id', authenticate, authorize(['administrator', 'manager']), productController.remove);
-app.get('/api/products/:id/availability', productController.checkAvailability); // New endpoint
-app.get('/api/inventory', authenticate, authorize(['administrator', 'manager']), inventoryController.getAll);
-app.post('/api/inventory', authenticate, authorize(['administrator', 'manager']), inventoryController.update);
+// product routes
+app.use('/products', require('./products/product.controller'));
+app.use('/api/products', require('./products/product.controller'));
 
-// Sync models and start the server
-const PORT = process.env.PORT || 4000; // Change to 4000
-sequelize.sync().then(() => {
-    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
-});
+// inventory routes
+app.use('/inventory', require('./inventory/inventory.controller'));
+
+// api routes
+app.use('/accounts', require('./accounts/accounts.controller'));
+// swagger docs route
+app.use('/api-docs', require('_helpers/swagger'));
+// global error handler
+app.use(errorHandler);
+// start server
+const port = process.env.NODE_ENV === 'production' ? (process.env.PORT || 80): 4000;
+app.listen(port, () => console.log('Server listening on port ' + port));

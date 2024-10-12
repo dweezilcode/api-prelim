@@ -1,15 +1,16 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../_helpers/db');
 
-// Define the Inventory model
-const Inventory = sequelize.define('Inventory', {
-    productId: { type: DataTypes.INTEGER, allowNull: false },
-    quantity: { type: DataTypes.INTEGER, allowNull: false },
-});
+module.exports = model;
 
-// Optional: Define associations if you have a Product model
-// Inventory.associate = (models) => {
-//     Inventory.belongsTo(models.Product, { foreignKey: 'productId' });
-// };
+function model(sequelize) {
+    const attributes = {
+        productId: { type: DataTypes.INTEGER, allowNull: false },
+        quantity: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    };
 
-module.exports = Inventory;
+    const options = {
+        timestamps: true
+    };
+
+    return sequelize.define('Inventory', attributes, options);
+}

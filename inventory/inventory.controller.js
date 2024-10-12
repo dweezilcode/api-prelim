@@ -1,23 +1,44 @@
-const inventoryService = require('./inventory.service');
+const express = require('express');
+const router = express.Router();
+const { Inventory } = require('_helpers/db');
+const authorize = require('_middleware/authorize');
 
-// Get all inventory
-async function getAll(req, res) {
+// View current inventory (Admin/Manager)
+// View inventory (Admin/Manager)
+router.get('/', authorize(['Admin', 'Manager']), async (req, res, next) => {
     try {
-        const inventory = await inventoryService.getAll();
+        const inventory = await Inventory.findAll(); // Assuming you have an Inventory model
         res.json(inventory);
     } catch (error) {
-        res.status(500).json({ message: 'Error retrieving inventory', error: error.message });
+        console.error('Error retrieving inventory:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
-}
+});
 
-// Update inventory
-async function update(req, res) {
-    try {
-        await inventoryService.update(req.body);
-        res.json({ message: 'Inventory updated' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error updating inventory', error: error.message });
+
+// Update inventory stock (Admin/Manager)
+router.post('/', authorize(['Admin', 'Manager']), async (req, res, next) => {
+    const { productId, quantity } = req.body;
+    let inventory = await Inventory.findOne({ where: { productId } });
+
+    if (inventory) {
+        // Update existing stock
+        inventory.quantity += quantity;
+        await inventory.save();
+    } else {
+        // Create new inventory record
+        inventory = await Inventory.create({ productId, quantity });
     }
-}
+    
+    res.status(200).json(inventory);
+});
 
-module.exports = { getAll, update };
+// Check stock availability for customers
+router.get('/:productId/availability', async (req, res, next) => {
+    const inventory = await Inventory.findOne({ where: { productId: req.params.productId } });
+    if (!inventory || inventory.quantity <= 0) return res.status(404).json({ message: 'Out of stock' });
+
+    res.json({ productId: req.params.productId, available: inventory.quantity });
+});
+
+module.exports = router;

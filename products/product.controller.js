@@ -1,47 +1,82 @@
-const productService = require('./product.service');
+const express = require('express');
+const router = express.Router();
+const { Product } = require('_helpers/db');
+const authorize = require('_middleware/authorize');
 
-// Get all products
-async function getAll(req, res) {
-    const products = await productService.getAll();
-    res.json(products);
-}
-
-// Get product by ID
-async function getById(req, res) {
-    const product = await productService.getById(req.params.id);
-    res.json(product);
-}
-
-// Create new product (Administrator/Manager)
-async function create(req, res) {
-    await productService.create(req.body);
-    res.status(201).json({ message: 'Product created' });
-}
-
-// Update existing product (Administrator/Manager)
-async function update(req, res) {
-    await productService.update(req.params.id, req.body);
-    res.json({ message: 'Product updated' });
-}
-
-// Delete product (Administrator/Manager)
-async function remove(req, res) {
-    await productService.delete(req.params.id);
-    res.json({ message: 'Product deleted' });
-}
-
-async function checkAvailability(req, res) {
-    const productId = req.params.id;
-    const product = await productService.getById(productId);
-
-    if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
+// View all products (Admin/Manager/Customer)
+router.get('/', async (req, res, next) => {
+    try {
+        const products = await Product.findAll({ where: { status: 'active' } });
+        res.json(products);
+    } catch (error) {
+        console.error('Error retrieving products:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
+});
 
-    // Assuming your product model has a 'stock' field or similar
-    const availability = product.stock > 0;
+// View product details by ID (Admin/Manager/Customer)
+router.get('/:id', async (req, res, next) => {
+    try {
+        const product = await Product.findByPk(req.params.id);
+        if (!product) return res.status(404).json({ message: 'Product not found' });
+        res.json(product);
+    } catch (error) {
+        console.error('Error retrieving product details:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
 
-    res.json({ productId, available: availability });
-}
+// Create a new product (Admin/Manager)
+router.post('/', authorize(['Admin', 'Manager']), async (req, res, next) => {
+    try {
+        const { name, description, price, stock } = req.body; // Include stock in the request body
+        const product = await Product.create({ name, description, price, stock }); // Ensure stock is saved
+        res.status(201).json(product);
+    } catch (error) {
+        console.error('Error creating product:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
 
-module.exports = { getAll, getById, create, update, remove, checkAvailability };
+// Update product details (Admin/Manager)
+router.put('/:id', authorize(['Admin', 'Manager']), async (req, res, next) => {
+    try {
+        const product = await Product.findByPk(req.params.id);
+        if (!product) return res.status(404).json({ message: 'Product not found' });
+
+        Object.assign(product, req.body);
+        await product.save();
+        res.json(product);
+    } catch (error) {
+        console.error('Error updating product:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+// Check stock availability (Customer)
+router.get('/:productId/availability', async (req, res, next) => {
+    try {
+        const productId = req.params.productId;
+
+        // Find the product by ID
+        const product = await Product.findByPk(productId);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Check stock availability
+        const stockAvailable = product.stock > 0; // Assuming you have a stock field in the Product model
+
+        res.json({
+            productId: product.id,
+            name: product.name,
+            isAvailable: stockAvailable,
+            stock: product.stock
+        });
+    } catch (error) {
+        console.error('Error checking stock availability:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+module.exports = router;

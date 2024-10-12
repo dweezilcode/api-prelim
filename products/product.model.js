@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 
-<<<<<<< HEAD
 module.exports = model;
 
 function model(sequelize) {
@@ -18,7 +17,7 @@ function model(sequelize) {
 
     return sequelize.define('Product', attributes, options);
 }
-=======
+
 // Define the Product model
 module.exports = (sequelize) => {
     return sequelize.define('Product', {
@@ -28,4 +27,4 @@ module.exports = (sequelize) => {
         stock: { type: DataTypes.INTEGER, defaultValue: 0 },
     });
 };
->>>>>>> 67bb0ddd1959aa525b3bb683796e01ece9c7f457
+
